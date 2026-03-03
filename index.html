@@ -7,6 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600;900&family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -36,21 +37,14 @@
     color: var(--ink);
   }
 
-  /* ── Scrollbar ── */
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: var(--paper-dk); }
   ::-webkit-scrollbar-thumb { background: var(--stone-lt); border-radius: 3px; }
 
-  /* ── Utility ── */
   .mono { font-family: 'DM Mono', monospace; }
   .serif { font-family: 'Noto Serif JP', serif; }
-
-  /* ── Page wrapper ── */
   .app { min-height: 100vh; display: flex; flex-direction: column; }
 
-  /* ══════════════════════════════════════════
-     HEADER
-  ══════════════════════════════════════════ */
   .header {
     background: var(--crimson-dk);
     color: var(--paper);
@@ -100,14 +94,8 @@
     font-weight: 700;
   }
 
-  /* ══════════════════════════════════════════
-     MAIN LAYOUT
-  ══════════════════════════════════════════ */
   .main { flex: 1; padding: 32px 24px; max-width: 1100px; margin: 0 auto; width: 100%; }
 
-  /* ══════════════════════════════════════════
-     LANDING / TOP
-  ══════════════════════════════════════════ */
   .landing {
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
@@ -115,11 +103,6 @@
     text-align: center; gap: 32px;
     padding: 40px 24px;
   }
-  .landing-kamon {
-    width: 90px; height: 90px;
-    position: relative;
-  }
-  .landing-kamon svg { width: 100%; height: 100%; }
   .landing-title {
     font-family: 'Noto Serif JP', serif;
     font-size: clamp(32px, 6vw, 52px);
@@ -174,9 +157,6 @@
     color: var(--crimson);
   }
 
-  /* ══════════════════════════════════════════
-     FORMS & INPUTS
-  ══════════════════════════════════════════ */
   .form-box {
     background: var(--white);
     border: 2px solid var(--paper-dk);
@@ -211,9 +191,6 @@
   }
   .form-textarea { resize: vertical; min-height: 80px; }
 
-  /* ══════════════════════════════════════════
-     BUTTONS
-  ══════════════════════════════════════════ */
   .btn {
     padding: 11px 24px;
     border-radius: 8px; border: none;
@@ -223,35 +200,19 @@
     display: inline-flex; align-items: center; gap: 8px;
     white-space: nowrap;
   }
-  .btn-primary {
-    background: var(--crimson);
-    color: var(--white);
-  }
+  .btn-primary { background: var(--crimson); color: var(--white); }
   .btn-primary:hover { background: var(--crimson-dk); box-shadow: 0 4px 14px rgba(155,27,48,.3); }
-  .btn-secondary {
-    background: transparent;
-    border: 2px solid var(--crimson);
-    color: var(--crimson);
-  }
+  .btn-secondary { background: transparent; border: 2px solid var(--crimson); color: var(--crimson); }
   .btn-secondary:hover { background: rgba(155,27,48,.06); }
-  .btn-gold {
-    background: var(--gold);
-    color: var(--ink);
-  }
+  .btn-gold { background: var(--gold); color: var(--ink); }
   .btn-gold:hover { background: var(--gold-lt); }
-  .btn-ghost {
-    background: var(--paper-dk);
-    color: var(--stone);
-  }
+  .btn-ghost { background: var(--paper-dk); color: var(--stone); }
   .btn-ghost:hover { background: var(--stone-lt); color: var(--ink); }
   .btn-sm { padding: 7px 14px; font-size: 12px; border-radius: 6px; }
   .btn-lg { padding: 14px 32px; font-size: 16px; border-radius: 10px; }
   .btn:disabled { opacity: .45; cursor: not-allowed; }
   .btn-full { width: 100%; justify-content: center; }
 
-  /* ══════════════════════════════════════════
-     BADGE / TAG
-  ══════════════════════════════════════════ */
   .badge {
     display: inline-flex; align-items: center;
     padding: 3px 10px; border-radius: 20px;
@@ -261,9 +222,6 @@
   .badge-draft    { background: var(--paper-dk); color: var(--stone); }
   .badge-new      { background: rgba(155,27,48,.12); color: var(--crimson); }
 
-  /* ══════════════════════════════════════════
-     TEACHER DASHBOARD
-  ══════════════════════════════════════════ */
   .dashboard-header {
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 28px; flex-wrap: wrap; gap: 12px;
@@ -319,9 +277,6 @@
   }
   .stat-label { font-size: 12px; color: var(--stone); margin-top: 4px; }
 
-  /* ══════════════════════════════════════════
-     TASK CREATOR
-  ══════════════════════════════════════════ */
   .creator-layout {
     display: grid;
     grid-template-columns: 1fr 300px;
@@ -360,12 +315,7 @@
       rgba(155,27,48,.04) 27px, rgba(155,27,48,.04) 28px
     );
   }
-  .canvas-area img {
-    width: 100%;
-    height: auto;
-    display: block;
-    pointer-events: none;
-  }
+  .canvas-area img { width: 100%; height: auto; display: block; pointer-events: none; }
   .canvas-placeholder {
     min-height: 400px;
     display: flex; flex-direction: column;
@@ -376,7 +326,6 @@
   .canvas-placeholder .big-icon { font-size: 52px; }
   .canvas-placeholder p { font-size: 14px; text-align: center; line-height: 1.7; }
 
-  /* Answer field overlays on canvas */
   .field-overlay {
     position: absolute;
     border: 2.5px solid var(--crimson);
@@ -402,7 +351,6 @@
     white-space: nowrap;
     pointer-events: none;
   }
-  /* Drawing rectangle while dragging */
   .draw-rect {
     position: absolute;
     border: 2px dashed var(--crimson);
@@ -411,7 +359,6 @@
     border-radius: 4px;
   }
 
-  /* Side panel */
   .side-panel {
     background: var(--white);
     border: 2px solid var(--paper-dk);
@@ -457,9 +404,6 @@
     padding: 8px 0;
   }
 
-  /* ══════════════════════════════════════════
-     STUDENT ANSWER SHEET
-  ══════════════════════════════════════════ */
   .answer-sheet-wrap {
     max-width: 780px; margin: 0 auto;
     display: flex; flex-direction: column; gap: 20px;
@@ -485,7 +429,6 @@
   .sheet-canvas { position: relative; width: 100%; }
   .sheet-canvas img { width: 100%; height: auto; display: block; }
 
-  /* Input fields rendered on sheet */
   .answer-input {
     position: absolute;
     background: rgba(255,255,255,.92);
@@ -527,9 +470,6 @@
   }
   .progress-text { font-size: 12px; color: var(--stone); }
 
-  /* ══════════════════════════════════════════
-     SUBMISSION VIEWER (teacher)
-  ══════════════════════════════════════════ */
   .review-header {
     display: flex; align-items: center; gap: 14px;
     margin-bottom: 24px; flex-wrap: wrap;
@@ -565,9 +505,6 @@
     margin-right: 4px; display: inline-block; margin-bottom: 2px;
   }
 
-  /* ══════════════════════════════════════════
-     STUDENT CODE ENTRY
-  ══════════════════════════════════════════ */
   .code-entry {
     max-width: 380px; margin: 60px auto;
     text-align: center; display: flex; flex-direction: column; gap: 20px;
@@ -589,17 +526,7 @@
     outline: none; transition: border-color .15s;
   }
   .code-input:focus { border-color: var(--crimson); }
-  .code-or {
-    color: var(--stone-lt); font-size: 13px;
-    display: flex; align-items: center; gap: 10px;
-  }
-  .code-or::before, .code-or::after {
-    content: ''; flex: 1; height: 1px; background: var(--paper-dk);
-  }
 
-  /* ══════════════════════════════════════════
-     MODAL
-  ══════════════════════════════════════════ */
   .modal-overlay {
     position: fixed; inset: 0;
     background: rgba(26,20,16,.55);
@@ -619,9 +546,6 @@
   }
   .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
 
-  /* ══════════════════════════════════════════
-     TOAST
-  ══════════════════════════════════════════ */
   .toast-container {
     position: fixed; bottom: 24px; left: 50%;
     transform: translateX(-50%);
@@ -645,9 +569,6 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  /* ══════════════════════════════════════════
-     DONE PAGE
-  ══════════════════════════════════════════ */
   .done-page {
     text-align: center; padding: 80px 24px;
     display: flex; flex-direction: column; align-items: center; gap: 20px;
@@ -659,9 +580,6 @@
   }
   .done-sub { font-size: 15px; color: var(--stone); line-height: 1.8; max-width: 360px; }
 
-  /* ══════════════════════════════════════════
-     UPLOAD ZONE
-  ══════════════════════════════════════════ */
   .upload-zone {
     border: 3px dashed var(--stone-lt);
     border-radius: 12px;
@@ -678,9 +596,35 @@
   .upload-zone p { font-size: 13px; color: var(--stone); margin-top: 10px; line-height: 1.7; }
   .upload-zone .big { font-size: 36px; }
 
-  /* ══════════════════════════════════════════
-     RESPONSIVE
-  ══════════════════════════════════════════ */
+  /* loading spinner */
+  .spinner {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 3px solid rgba(255,255,255,.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    flex-shrink: 0;
+  }
+  .spinner.dark {
+    border-color: rgba(155,27,48,.2);
+    border-top-color: var(--crimson);
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* config warning banner */
+  .config-banner {
+    background: #FEF3C7; border: 2px solid #F59E0B;
+    border-radius: 12px; padding: 16px 20px;
+    font-size: 13px; color: #92400E;
+    line-height: 1.7; margin-bottom: 20px;
+  }
+  .config-banner strong { color: #78350F; }
+  .config-banner code {
+    background: #FDE68A; padding: 1px 6px;
+    border-radius: 4px; font-family: monospace;
+  }
+
   @media (max-width: 600px) {
     .main { padding: 20px 14px; }
     .form-box { padding: 22px 18px; }
@@ -688,7 +632,6 @@
     .sheet-submit-bar { flex-direction: column; align-items: stretch; }
   }
 
-  /* ── Misc ── */
   .divider { height: 1px; background: var(--paper-dk); margin: 16px 0; }
   .text-muted { color: var(--stone); font-size: 13px; }
   .text-center { text-align: center; }
@@ -706,16 +649,119 @@
 const { useState, useEffect, useRef, useCallback } = React;
 
 /* ══════════════════════════════════════════
-   IN-MEMORY STORAGE  (Firebase の代わり)
-   実際の運用では Firebase SDK に差し替える
+   ★ SUPABASE 設定 ★
+   以下の2行を自分のプロジェクト情報に書き換えてください
+══════════════════════════════════════════ */
+const SUPABASE_URL  = 'https://ugtnpkvrlvlgyjcuwotb.supabase.co';   // 例: https://abcdefgh.supabase.co
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVndG5wa3ZybHZsZ3lqY3V3b3RiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1MzI4MTEsImV4cCI6MjA4ODEwODgxMX0.2EvzmxxmtX2lplCUWfmfqIXFyzrDGBGfnDSkNU2z93Y'; // Project Settings → API → anon public
+
+const isConfigured = SUPABASE_URL !== 'https://ugtnpkvrlvlgyjcuwotb.supabase.co';
+const supabase = isConfigured
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON)
+  : null;
+
+/* ══════════════════════════════════════════
+   DB API  (Supabase ラッパー)
 ══════════════════════════════════════════ */
 const DB = {
-  tasks: [],
-  submissions: [],
-  nextId: 1,
+  /* 課題 */
+  async getTasks() {
+    if (!supabase) return [];
+    const { data, error } = await supabase
+      .from('tasks').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map(camelTask);
+  },
+  async createTask(task) {
+    if (!supabase) throw new Error('Supabase未設定');
+    const { data, error } = await supabase.from('tasks').insert([snakeTask(task)]).select().single();
+    if (error) throw error;
+    return camelTask(data);
+  },
+  async updateTask(id, patch) {
+    if (!supabase) throw new Error('Supabase未設定');
+    const { error } = await supabase.from('tasks').update(snakeTask(patch)).eq('id', id);
+    if (error) throw error;
+  },
+  async deleteTask(id) {
+    if (!supabase) throw new Error('Supabase未設定');
+    const { error } = await supabase.from('tasks').delete().eq('id', id);
+    if (error) throw error;
+  },
+  async findTaskByCode(code) {
+    if (!supabase) throw new Error('Supabase未設定');
+    const { data, error } = await supabase
+      .from('tasks').select('*')
+      .eq('access_code', code).eq('is_published', true).maybeSingle();
+    if (error) throw error;
+    return data ? camelTask(data) : null;
+  },
+
+  /* 提出 */
+  async getSubmissions(taskId) {
+    if (!supabase) return [];
+    const { data, error } = await supabase
+      .from('submissions').select('*')
+      .eq('task_id', taskId).order('submitted_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map(camelSub);
+  },
+  async createSubmission(sub) {
+    if (!supabase) throw new Error('Supabase未設定');
+    const { error } = await supabase.from('submissions').insert([snakeSub(sub)]);
+    if (error) throw error;
+  },
+  async countSubmissions(taskId) {
+    if (!supabase) return 0;
+    const { count, error } = await supabase
+      .from('submissions').select('*', { count: 'exact', head: true })
+      .eq('task_id', taskId);
+    if (error) return 0;
+    return count || 0;
+  },
 };
 
-function genId() { return 'id_' + (DB.nextId++); }
+/* snake_case ↔ camelCase 変換 */
+function camelTask(r) {
+  return {
+    id: r.id, title: r.title, description: r.description,
+    imageDataUrl: r.image_data_url,
+    accessCode: r.access_code,
+    createdBy: r.created_by, createdAt: r.created_at,
+    isPublished: r.is_published,
+    answerFields: r.answer_fields || [],
+  };
+}
+function snakeTask(t) {
+  const o = {};
+  if (t.id          !== undefined) o.id             = t.id;
+  if (t.title       !== undefined) o.title          = t.title;
+  if (t.description !== undefined) o.description    = t.description;
+  if (t.imageDataUrl!== undefined) o.image_data_url = t.imageDataUrl;
+  if (t.accessCode  !== undefined) o.access_code    = t.accessCode;
+  if (t.createdBy   !== undefined) o.created_by     = t.createdBy;
+  if (t.isPublished !== undefined) o.is_published   = t.isPublished;
+  if (t.answerFields!== undefined) o.answer_fields  = t.answerFields;
+  return o;
+}
+function camelSub(r) {
+  return {
+    id: r.id, taskId: r.task_id, nickname: r.nickname,
+    answers: r.answers || {}, submittedAt: r.submitted_at,
+  };
+}
+function snakeSub(s) {
+  return {
+    id: s.id, task_id: s.taskId, nickname: s.nickname,
+    answers: s.answers, submitted_at: s.submittedAt,
+  };
+}
+
+/* ══════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════ */
+let _uid = 1;
+function genId() { return 'id_' + (_uid++) + '_' + Date.now(); }
 function genCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   return Array.from({length: 6}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
@@ -737,23 +783,17 @@ function useToast() {
 /* ══════════════════════════════════════════
    COMPONENTS
 ══════════════════════════════════════════ */
-
-/* ── Kamon SVG ── */
 function Kamon({ size = 80, color = '#9B1B30' }) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100">
-      {/* outer ring */}
       <circle cx="50" cy="50" r="46" fill="none" stroke={color} strokeWidth="3" />
-      {/* crescent */}
       <circle cx="50" cy="50" r="32" fill={color} />
       <circle cx="62" cy="42" r="26" fill="#F9F4ED" />
-      {/* star dot */}
       <circle cx="32" cy="58" r="5" fill="#C9972C" />
     </svg>
   );
 }
 
-/* ── Header ── */
 function Header({ role, onRoleChange, onHome }) {
   return (
     <header className="header">
@@ -771,7 +811,6 @@ function Header({ role, onRoleChange, onHome }) {
   );
 }
 
-/* ── Toast ── */
 function Toasts({ toasts }) {
   if (!toasts.length) return null;
   return (
@@ -785,30 +824,48 @@ function Toasts({ toasts }) {
   );
 }
 
+function ConfigBanner() {
+  if (isConfigured) return null;
+  return (
+    <div className="config-banner">
+      ⚠️ <strong>Supabase未設定：</strong>
+      HTMLファイル上部の <code>SUPABASE_URL</code> と <code>SUPABASE_ANON</code> を
+      自分のプロジェクト情報に書き換えてください。
+      設定するまでデータは保存されません。
+    </div>
+  );
+}
+
 /* ══════════════════════════════════════════
    STUDENT FLOW
 ══════════════════════════════════════════ */
-
-/* Code Entry */
 function StudentCodeEntry({ onEnter, toast }) {
   const [code, setCode] = useState('');
   const [nick, setNick] = useState('');
-  const [err, setErr] = useState('');
+  const [err,  setErr]  = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handle = () => {
+  const handle = async () => {
     const trimmed = code.trim().toUpperCase();
     if (trimmed.length < 4) { setErr('課題コードを入力してください'); return; }
-    if (!nick.trim()) { setErr('ニックネームを入力してください'); return; }
-    const task = DB.tasks.find(t => t.accessCode === trimmed && t.isPublished);
-    if (!task) { setErr('課題が見つかりません。コードを確認してください。'); return; }
-    setErr('');
-    onEnter(task, nick.trim());
+    if (!nick.trim())        { setErr('ニックネームを入力してください'); return; }
+    setLoading(true); setErr('');
+    try {
+      const task = await DB.findTaskByCode(trimmed);
+      if (!task) { setErr('課題が見つかりません。コードを確認してください。'); return; }
+      onEnter(task, nick.trim());
+    } catch(e) {
+      setErr('エラーが発生しました: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="code-entry">
       <Kamon size={72} />
       <div className="code-title">課題コードを入力</div>
+      <ConfigBanner />
       <input
         className="code-input"
         placeholder="例: AB1234"
@@ -826,38 +883,43 @@ function StudentCodeEntry({ onEnter, toast }) {
         <div className="form-hint">本名は不要です（最大20文字）</div>
       </div>
       {err && <div style={{color: 'var(--crimson)', fontSize: 13}}>{err}</div>}
-      <button className="btn btn-primary btn-lg btn-full" onClick={handle}>
-        課題を開く →
+      <button className="btn btn-primary btn-lg btn-full" onClick={handle} disabled={loading}>
+        {loading ? <><span className="spinner" /> 検索中…</> : '課題を開く →'}
       </button>
     </div>
   );
 }
 
-/* Answer Sheet */
 function AnswerSheet({ task, nickname, onSubmit }) {
-  const [answers, setAnswers] = useState({});
+  const [answers,   setAnswers]   = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const [loading,   setLoading]   = useState(false);
 
   const fields = task.answerFields || [];
   const filled  = fields.filter(f => (answers[f.id] || '').trim() !== '').length;
   const total   = fields.length;
   const pct     = total === 0 ? 0 : Math.round((filled / total) * 100);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (filled < total) {
       if (!window.confirm(`まだ ${total - filled} 問が未入力です。このまま提出しますか？`)) return;
     }
-    const sub = {
-      id: genId(),
-      taskId: task.id,
-      nickname,
-      answers: { ...answers },
-      submittedAt: new Date().toISOString(),
-      isLocked: true,
-    };
-    DB.submissions.push(sub);
-    setSubmitted(true);
-    onSubmit();
+    setLoading(true);
+    try {
+      await DB.createSubmission({
+        id: genId(),
+        taskId: task.id,
+        nickname,
+        answers: { ...answers },
+        submittedAt: new Date().toISOString(),
+      });
+      setSubmitted(true);
+      onSubmit();
+    } catch(e) {
+      alert('提出に失敗しました: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (submitted) {
@@ -866,8 +928,7 @@ function AnswerSheet({ task, nickname, onSubmit }) {
         <div className="done-icon">🎉</div>
         <div className="done-title">提出完了！</div>
         <div className="done-sub">
-          {nickname} さんの回答を受け付けました。<br />
-          お疲れ様でした！
+          {nickname} さんの回答を受け付けました。<br />お疲れ様でした！
         </div>
         <button className="btn btn-ghost mt-16" onClick={() => window.location.reload()}>
           トップに戻る
@@ -881,9 +942,7 @@ function AnswerSheet({ task, nickname, onSubmit }) {
       <div className="sheet-header">
         <div className="sheet-title">{task.title}</div>
         {task.description && <div className="sheet-desc">{task.description}</div>}
-        <div style={{marginTop:6, fontSize:13, opacity:.7}}>
-          生徒：{nickname}
-        </div>
+        <div style={{marginTop:6, fontSize:13, opacity:.7}}>生徒：{nickname}</div>
       </div>
 
       <div className="sheet-canvas-wrapper">
@@ -892,11 +951,9 @@ function AnswerSheet({ task, nickname, onSubmit }) {
             <img src={task.imageDataUrl} alt="問題プリント" draggable={false} />
             {fields.map(f => (
               <div key={f.id} style={{
-                position: 'absolute',
-                left:   f.x + '%',
-                top:    f.y + '%',
-                width:  f.width + '%',
-                height: f.height + '%',
+                position:'absolute',
+                left:f.x+'%', top:f.y+'%',
+                width:f.width+'%', height:f.height+'%',
               }}>
                 <input
                   className="answer-input"
@@ -917,7 +974,6 @@ function AnswerSheet({ task, nickname, onSubmit }) {
         )}
       </div>
 
-      {/* Text-only fallback list */}
       {fields.length > 0 && (
         <div className="side-panel">
           <div className="side-panel-title">回答一覧（入力補助）</div>
@@ -949,8 +1005,8 @@ function AnswerSheet({ task, nickname, onSubmit }) {
             <div className="progress-bar-fill" style={{width: pct + '%'}} />
           </div>
         </div>
-        <button className="btn btn-primary btn-lg" onClick={handleSubmit}>
-          提出する 📩
+        <button className="btn btn-primary btn-lg" onClick={handleSubmit} disabled={loading}>
+          {loading ? <><span className="spinner" /> 提出中…</> : '提出する 📩'}
         </button>
       </div>
     </div>
@@ -960,23 +1016,21 @@ function AnswerSheet({ task, nickname, onSubmit }) {
 /* ══════════════════════════════════════════
    TEACHER FLOW
 ══════════════════════════════════════════ */
-
-/* Login */
 function TeacherLogin({ onLogin }) {
-  const [email, setEmail]   = useState('');
-  const [pass,  setPass]    = useState('');
-  const [err,   setErr]     = useState('');
+  const [email, setEmail] = useState('');
+  const [pass,  setPass]  = useState('');
+  const [err,   setErr]   = useState('');
 
-  // Demo: any email/pass works
   const handle = () => {
     if (!email || !pass) { setErr('メールアドレスとパスワードを入力してください'); return; }
     onLogin({ email, uid: genId(), displayName: email.split('@')[0] });
   };
 
   return (
-    <div className="main" style={{display:'flex', alignItems:'center', justifyContent:'center', minHeight:'calc(100vh - 58px)'}}>
+    <div className="main" style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'calc(100vh - 58px)'}}>
       <div className="form-box">
         <div className="form-title">教師ログイン</div>
+        <ConfigBanner />
         <div className="form-group">
           <label className="form-label">メールアドレス</label>
           <input className="form-input" type="email" placeholder="teacher@example.com"
@@ -989,10 +1043,8 @@ function TeacherLogin({ onLogin }) {
             value={pass} onChange={e => setPass(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handle()} />
         </div>
-        {err && <div style={{color:'var(--crimson)', fontSize:13, marginBottom:12}}>{err}</div>}
-        <button className="btn btn-primary btn-full btn-lg" onClick={handle}>
-          ログイン
-        </button>
+        {err && <div style={{color:'var(--crimson)',fontSize:13,marginBottom:12}}>{err}</div>}
+        <button className="btn btn-primary btn-full btn-lg" onClick={handle}>ログイン</button>
         <div className="text-muted text-center mt-16" style={{fontSize:12}}>
           ※ デモ版：任意のメールアドレス/パスワードでログインできます
         </div>
@@ -1001,25 +1053,47 @@ function TeacherLogin({ onLogin }) {
   );
 }
 
-/* Dashboard */
 function TeacherDashboard({ teacher, onCreate, onReview, toast }) {
-  const [tasks, setTasks] = useState([...DB.tasks]);
+  const [tasks,    setTasks]    = useState([]);
+  const [loading,  setLoading]  = useState(true);
+  const [subCounts, setSubCounts] = useState({});
 
-  const refresh = () => setTasks([...DB.tasks]);
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const ts = await DB.getTasks();
+      setTasks(ts);
+      // 提出数を並列取得
+      const counts = {};
+      await Promise.all(ts.map(async t => {
+        counts[t.id] = await DB.countSubmissions(t.id);
+      }));
+      setSubCounts(counts);
+    } catch(e) {
+      toast.show('データの取得に失敗しました: ' + e.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const togglePublish = (task) => {
-    task.isPublished = !task.isPublished;
-    refresh();
-    toast.show(task.isPublished ? '課題を公開しました' : '課題を非公開にしました',
-               task.isPublished ? 'success' : 'default');
+  useEffect(() => { load(); }, [load]);
+
+  const togglePublish = async (task) => {
+    try {
+      await DB.updateTask(task.id, { isPublished: !task.isPublished });
+      toast.show(task.isPublished ? '課題を非公開にしました' : '課題を公開しました',
+                 task.isPublished ? 'default' : 'success');
+      load();
+    } catch(e) { toast.show('更新に失敗しました', 'error'); }
   };
 
-  const deleteTask = (task) => {
+  const deleteTask = async (task) => {
     if (!window.confirm(`「${task.title}」を削除しますか？`)) return;
-    const idx = DB.tasks.indexOf(task);
-    if (idx > -1) DB.tasks.splice(idx, 1);
-    refresh();
-    toast.show('課題を削除しました');
+    try {
+      await DB.deleteTask(task.id);
+      toast.show('課題を削除しました');
+      load();
+    } catch(e) { toast.show('削除に失敗しました', 'error'); }
   };
 
   const copyCode = (code) => {
@@ -1027,33 +1101,42 @@ function TeacherDashboard({ teacher, onCreate, onReview, toast }) {
     toast.show('コードをコピーしました ✓', 'success');
   };
 
-  const subCount = (taskId) => DB.submissions.filter(s => s.taskId === taskId).length;
+  const totalSubs = Object.values(subCounts).reduce((a, b) => a + b, 0);
 
   return (
     <div className="main">
+      <ConfigBanner />
       <div className="stat-row">
         <div className="stat-box">
-          <div className="stat-num">{DB.tasks.length}</div>
+          <div className="stat-num">{tasks.length}</div>
           <div className="stat-label">作成済み課題</div>
         </div>
         <div className="stat-box">
-          <div className="stat-num">{DB.tasks.filter(t => t.isPublished).length}</div>
+          <div className="stat-num">{tasks.filter(t => t.isPublished).length}</div>
           <div className="stat-label">公開中</div>
         </div>
         <div className="stat-box">
-          <div className="stat-num">{DB.submissions.length}</div>
+          <div className="stat-num">{totalSubs}</div>
           <div className="stat-label">提出件数</div>
         </div>
       </div>
 
       <div className="dashboard-header">
         <div className="dashboard-title">課題一覧</div>
-        <button className="btn btn-primary" onClick={onCreate}>
-          ＋ 新しい課題を作成
-        </button>
+        <div style={{display:'flex',gap:8}}>
+          <button className="btn btn-ghost btn-sm" onClick={load} disabled={loading}>
+            {loading ? <span className="spinner dark" /> : '↻'} 更新
+          </button>
+          <button className="btn btn-primary" onClick={onCreate}>＋ 新しい課題を作成</button>
+        </div>
       </div>
 
-      {tasks.length === 0 ? (
+      {loading ? (
+        <div style={{textAlign:'center', padding:'60px 0', color:'var(--stone)'}}>
+          <span className="spinner dark" style={{width:32,height:32,borderWidth:4}} />
+          <div style={{marginTop:12, fontSize:14}}>読み込み中…</div>
+        </div>
+      ) : tasks.length === 0 ? (
         <div style={{textAlign:'center', padding:'60px 0', color:'var(--stone)'}}>
           <div style={{fontSize:48, marginBottom:12}}>📋</div>
           <div style={{fontSize:15}}>まだ課題がありません</div>
@@ -1069,29 +1152,23 @@ function TeacherDashboard({ teacher, onCreate, onReview, toast }) {
                   {task.isPublished ? '公開中' : '非公開'}
                 </span>
               </div>
-              {task.description && (
-                <div className="task-card-meta">{task.description}</div>
-              )}
+              {task.description && <div className="task-card-meta">{task.description}</div>}
               <div>
-                <div className="text-muted" style={{fontSize:11, marginBottom:4}}>アクセスコード</div>
+                <div className="text-muted" style={{fontSize:11,marginBottom:4}}>アクセスコード</div>
                 <div className="task-card-code" style={{cursor:'pointer'}} onClick={() => copyCode(task.accessCode)}>
                   {task.accessCode}
-                  <span style={{fontSize:11, marginLeft:8, opacity:.6}}>📋</span>
+                  <span style={{fontSize:11,marginLeft:8,opacity:.6}}>📋</span>
                 </div>
               </div>
               <div className="task-card-meta">
-                回答欄 {(task.answerFields || []).length} 個　・　提出 {subCount(task.id)} 件
+                回答欄 {(task.answerFields || []).length} 個　・　提出 {subCounts[task.id] || 0} 件
               </div>
               <div className="task-card-actions">
                 <button className="btn btn-sm btn-secondary" onClick={() => togglePublish(task)}>
                   {task.isPublished ? '非公開にする' : '公開する'}
                 </button>
-                <button className="btn btn-sm btn-ghost" onClick={() => onReview(task)}>
-                  回答確認
-                </button>
-                <button className="btn btn-sm btn-ghost" style={{color:'var(--crimson)'}} onClick={() => deleteTask(task)}>
-                  削除
-                </button>
+                <button className="btn btn-sm btn-ghost" onClick={() => onReview(task)}>回答確認</button>
+                <button className="btn btn-sm btn-ghost" style={{color:'var(--crimson)'}} onClick={() => deleteTask(task)}>削除</button>
               </div>
             </div>
           ))}
@@ -1101,26 +1178,24 @@ function TeacherDashboard({ teacher, onCreate, onReview, toast }) {
   );
 }
 
-/* Task Creator */
 function TaskCreator({ teacher, onDone, toast }) {
-  const [title, setTitle]   = useState('');
-  const [desc,  setDesc]    = useState('');
+  const [title,  setTitle]  = useState('');
+  const [desc,   setDesc]   = useState('');
   const [imgUrl, setImgUrl] = useState(null);
   const [fields, setFields] = useState([]);
   const [selField, setSelField] = useState(null);
-  const [drawing, setDrawing]   = useState(null); // {x0,y0,x1,y1}
-  const [mode, setMode]     = useState('text'); // default type for new fields
-  const [step, setStep]     = useState(1); // 1=info, 2=upload, 3=place
+  const [drawing, setDrawing]   = useState(null);
+  const [mode,   setMode]   = useState('text');
+  const [step,   setStep]   = useState(1);
   const [saving, setSaving] = useState(false);
   const [showLabelModal, setShowLabelModal] = useState(false);
-  const [pendingField, setPendingField] = useState(null);
-  const [labelInput, setLabelInput] = useState('');
+  const [pendingField,   setPendingField]   = useState(null);
+  const [labelInput,     setLabelInput]     = useState('');
 
-  const canvasRef  = useRef(null);
-  const fileRef    = useRef(null);
-  const imgRef     = useRef(null);
+  const canvasRef = useRef(null);
+  const fileRef   = useRef(null);
+  const imgRef    = useRef(null);
 
-  /* helpers */
   const getPct = (clientX, clientY) => {
     const rect = canvasRef.current.getBoundingClientRect();
     return {
@@ -1128,107 +1203,82 @@ function TaskCreator({ teacher, onDone, toast }) {
       y: Math.max(0, Math.min(100, ((clientY - rect.top)  / rect.height) * 100)),
     };
   };
-
-  /* Mouse / Touch events on canvas */
   const getClient = (e) => {
     if (e.touches && e.touches.length > 0) return { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY };
     return { clientX: e.clientX, clientY: e.clientY };
   };
 
   const onPointerDown = (e) => {
-    if (!imgUrl) return;
-    e.preventDefault();
+    if (!imgUrl) return; e.preventDefault();
     const { clientX, clientY } = getClient(e);
     const p = getPct(clientX, clientY);
-    setDrawing({ x0: p.x, y0: p.y, x1: p.x, y1: p.y });
+    setDrawing({ x0:p.x, y0:p.y, x1:p.x, y1:p.y });
     setSelField(null);
   };
-
   const onPointerMove = (e) => {
-    if (!drawing) return;
-    e.preventDefault();
+    if (!drawing) return; e.preventDefault();
     const { clientX, clientY } = getClient(e);
     const p = getPct(clientX, clientY);
-    setDrawing(d => ({ ...d, x1: p.x, y1: p.y }));
+    setDrawing(d => ({ ...d, x1:p.x, y1:p.y }));
   };
-
   const onPointerUp = (e) => {
-    if (!drawing) return;
-    e.preventDefault();
+    if (!drawing) return; e.preventDefault();
     const x = Math.min(drawing.x0, drawing.x1);
     const y = Math.min(drawing.y0, drawing.y1);
     const w = Math.abs(drawing.x1 - drawing.x0);
     const h = Math.abs(drawing.y1 - drawing.y0);
     setDrawing(null);
-    if (w < 1 || h < 1) return; // too small
-    const newField = {
-      id: genId(), type: mode,
-      x, y, width: w, height: h,
-      label: `問${fields.length + 1}`,
-    };
-    setPendingField(newField);
-    setLabelInput(newField.label);
-    setShowLabelModal(true);
+    if (w < 1 || h < 1) return;
+    const nf = { id:genId(), type:mode, x, y, width:w, height:h, label:`問${fields.length+1}` };
+    setPendingField(nf); setLabelInput(nf.label); setShowLabelModal(true);
   };
 
   const confirmLabel = () => {
     const f = { ...pendingField, label: labelInput || pendingField.label };
     setFields(fs => [...fs, f]);
-    setSelField(f.id);
-    setShowLabelModal(false);
-    setPendingField(null);
+    setSelField(f.id); setShowLabelModal(false); setPendingField(null);
   };
-
   const deleteField = (id) => {
     setFields(fs => fs.filter(f => f.id !== id));
     if (selField === id) setSelField(null);
   };
 
-  /* File upload */
   const handleFile = (file) => {
     if (!file) return;
     if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
       toast.show('画像（PNG/JPG）またはPDFを選択してください', 'error'); return;
     }
     const reader = new FileReader();
-    reader.onload = (ev) => {
-      setImgUrl(ev.target.result);
-      setStep(3);
-    };
+    reader.onload = (ev) => { setImgUrl(ev.target.result); setStep(3); };
     reader.readAsDataURL(file);
   };
 
-  const save = () => {
+  const save = async () => {
     if (!title.trim()) { toast.show('課題タイトルを入力してください', 'error'); return; }
     setSaving(true);
-    setTimeout(() => {
-      const task = {
+    try {
+      const task = await DB.createTask({
         id: genId(),
         title: title.trim(),
         description: desc.trim(),
         imageDataUrl: imgUrl,
         accessCode: genCode(),
         createdBy: teacher.uid,
-        createdAt: new Date().toISOString(),
         isPublished: false,
         answerFields: fields,
-      };
-      DB.tasks.push(task);
-      setSaving(false);
+      });
       toast.show('課題を保存しました', 'success');
       onDone(task);
-    }, 600);
+    } catch(e) {
+      toast.show('保存に失敗しました: ' + e.message, 'error');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  /* drag-over */
-  const onDragOver = (e) => { e.preventDefault(); };
-  const onDrop = (e) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleFile(file);
-  };
+  const onDragOver = (e) => e.preventDefault();
+  const onDrop = (e) => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f) handleFile(f); };
 
-  /* rect for drawing feedback */
   const drawRect = drawing ? {
     left:   Math.min(drawing.x0, drawing.x1) + '%',
     top:    Math.min(drawing.y0, drawing.y1) + '%',
@@ -1238,7 +1288,6 @@ function TaskCreator({ teacher, onDone, toast }) {
 
   return (
     <div className="main">
-      {/* Step header */}
       <div className="flex-row" style={{marginBottom:20, gap:6, flexWrap:'wrap'}}>
         <button className="btn btn-ghost btn-sm" onClick={onDone}>← 戻る</button>
         <div style={{flex:1}} />
@@ -1253,15 +1302,13 @@ function TaskCreator({ teacher, onDone, toast }) {
               width:20, height:20, borderRadius:'50%', display:'flex',
               alignItems:'center', justifyContent:'center', fontSize:11,
               background: step > i ? 'var(--crimson)' : step === i+1 ? 'var(--crimson)' : 'var(--paper-dk)',
-              color: step >= i+1 ? 'white' : 'var(--stone)',
-              fontWeight: 700,
+              color: step >= i+1 ? 'white' : 'var(--stone)', fontWeight:700,
             }}>{i+1}</div>
-            <span className="hide-sm">{s}</span>
+            <span>{s}</span>
           </div>
         ))}
       </div>
 
-      {/* Step 1: 課題情報 */}
       {step === 1 && (
         <div className="form-box" style={{maxWidth:560}}>
           <div className="form-title">① 課題情報を入力</div>
@@ -1276,23 +1323,19 @@ function TaskCreator({ teacher, onDone, toast }) {
               value={desc} onChange={e => setDesc(e.target.value)} />
           </div>
           <button className="btn btn-primary btn-full mt-8"
-            disabled={!title.trim()}
-            onClick={() => setStep(2)}>次へ →</button>
+            disabled={!title.trim()} onClick={() => setStep(2)}>次へ →</button>
         </div>
       )}
 
-      {/* Step 2: Upload */}
       {step === 2 && (
         <div className="form-box" style={{maxWidth:560}}>
           <div className="form-title">② プリントをアップロード</div>
-          <div className="upload-zone"
-            onDragOver={onDragOver} onDrop={onDrop}
+          <div className="upload-zone" onDragOver={onDragOver} onDrop={onDrop}
             onClick={() => fileRef.current.click()}>
             <div className="big">📄</div>
             <p>クリックまたはドラッグ＆ドロップで<br />画像（PNG/JPG）またはPDFをアップロード</p>
             <input ref={fileRef} type="file" accept="image/*,application/pdf"
-              style={{display:'none'}}
-              onChange={e => handleFile(e.target.files?.[0])} />
+              style={{display:'none'}} onChange={e => handleFile(e.target.files?.[0])} />
           </div>
           <div className="divider" />
           <div style={{textAlign:'center'}}>
@@ -1306,10 +1349,8 @@ function TaskCreator({ teacher, onDone, toast }) {
         </div>
       )}
 
-      {/* Step 3: Place fields */}
       {step === 3 && (
         <div className="creator-layout">
-          {/* Canvas */}
           <div className="canvas-wrapper">
             <div className="canvas-toolbar">
               <span style={{fontSize:12, fontWeight:700, color:'var(--stone)'}}>回答欄の種類：</span>
@@ -1322,30 +1363,19 @@ function TaskCreator({ teacher, onDone, toast }) {
                 {imgUrl ? 'ドラッグして回答欄を配置' : 'プリントなし'}
               </span>
             </div>
-            <div
-              className="canvas-area"
-              ref={canvasRef}
-              onMouseDown={onPointerDown}
-              onMouseMove={onPointerMove}
-              onMouseUp={onPointerUp}
-              onTouchStart={onPointerDown}
-              onTouchMove={onPointerMove}
-              onTouchEnd={onPointerUp}
-            >
+            <div className="canvas-area" ref={canvasRef}
+              onMouseDown={onPointerDown} onMouseMove={onPointerMove} onMouseUp={onPointerUp}
+              onTouchStart={onPointerDown} onTouchMove={onPointerMove} onTouchEnd={onPointerUp}>
               {imgUrl ? (
                 <>
                   <img ref={imgRef} src={imgUrl} alt="プリント" draggable={false} />
                   {fields.map(f => (
                     <div key={f.id}
                       className={`field-overlay ${selField === f.id ? 'selected' : ''}`}
-                      style={{
-                        left: f.x+'%', top: f.y+'%',
-                        width: f.width+'%', height: f.height+'%',
-                      }}
-                      onClick={e => { e.stopPropagation(); setSelField(f.id); }}
-                    >
+                      style={{left:f.x+'%', top:f.y+'%', width:f.width+'%', height:f.height+'%'}}
+                      onClick={e => { e.stopPropagation(); setSelField(f.id); }}>
                       <div className="field-label-chip">{f.label}</div>
-                      <span style={{fontSize:10, opacity:.6, pointerEvents:'none'}}>
+                      <span style={{fontSize:10,opacity:.6,pointerEvents:'none'}}>
                         {f.type === 'number' ? '🔢' : '📝'}
                       </span>
                     </div>
@@ -1361,15 +1391,11 @@ function TaskCreator({ teacher, onDone, toast }) {
             </div>
           </div>
 
-          {/* Side panel */}
           <div className="side-panel">
             <div className="side-panel-title">回答欄リスト</div>
-
             {fields.length === 0 ? (
               <div className="empty-hint">
-                {imgUrl
-                  ? 'プリント上をドラッグして\n回答欄を配置してください'
-                  : '下のボタンで回答欄を追加できます'}
+                {imgUrl ? 'プリント上をドラッグして\n回答欄を配置してください' : '下のボタンで回答欄を追加できます'}
               </div>
             ) : (
               <div className="field-list">
@@ -1387,15 +1413,12 @@ function TaskCreator({ teacher, onDone, toast }) {
                     </div>
                     <button className="btn btn-sm btn-ghost"
                       style={{padding:'4px 8px', color:'var(--crimson)'}}
-                      onClick={e => { e.stopPropagation(); deleteField(f.id); }}>
-                      ✕
-                    </button>
+                      onClick={e => { e.stopPropagation(); deleteField(f.id); }}>✕</button>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Manual add (no-image mode) */}
             {!imgUrl && (
               <>
                 <div className="divider" />
@@ -1409,25 +1432,18 @@ function TaskCreator({ teacher, onDone, toast }) {
                 <button className="btn btn-secondary btn-full"
                   onClick={() => {
                     const f = {
-                      id: genId(), type: mode,
-                      x: 5, y: 5 + fields.length * 8,
-                      width: 40, height: 6,
-                      label: `問${fields.length + 1}`,
+                      id:genId(), type:mode,
+                      x:5, y:5+fields.length*8, width:40, height:6,
+                      label:`問${fields.length+1}`,
                     };
-                    setFields(fs => [...fs, f]);
-                    setSelField(f.id);
-                  }}>
-                  ＋ 回答欄を追加
-                </button>
+                    setFields(fs => [...fs, f]); setSelField(f.id);
+                  }}>＋ 回答欄を追加</button>
               </>
             )}
 
             <div className="divider" />
-
-            <button className="btn btn-primary btn-full"
-              disabled={saving}
-              onClick={save}>
-              {saving ? '保存中…' : '💾 課題を保存する'}
+            <button className="btn btn-primary btn-full" disabled={saving} onClick={save}>
+              {saving ? <><span className="spinner" /> 保存中…</> : '💾 課題を保存する'}
             </button>
             <button className="btn btn-ghost btn-full btn-sm" onClick={() => setStep(2)}>
               ← プリントを変更
@@ -1436,9 +1452,8 @@ function TaskCreator({ teacher, onDone, toast }) {
         </div>
       )}
 
-      {/* Label modal */}
       {showLabelModal && (
-        <div className="modal-overlay" onClick={() => { setShowLabelModal(false); setDrawing(null); }}>
+        <div className="modal-overlay" onClick={() => { setShowLabelModal(false); }}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-title">回答欄のラベルを設定</div>
             <div className="form-group">
@@ -1458,7 +1473,7 @@ function TaskCreator({ teacher, onDone, toast }) {
               </select>
             </div>
             <div className="modal-actions">
-              <button className="btn btn-ghost" onClick={() => { setShowLabelModal(false); }}>キャンセル</button>
+              <button className="btn btn-ghost" onClick={() => setShowLabelModal(false)}>キャンセル</button>
               <button className="btn btn-primary" onClick={confirmLabel}>決定</button>
             </div>
           </div>
@@ -1468,9 +1483,17 @@ function TaskCreator({ teacher, onDone, toast }) {
   );
 }
 
-/* Submission Reviewer */
 function SubmissionReviewer({ task, onBack }) {
-  const subs = DB.submissions.filter(s => s.taskId === task.id);
+  const [subs,    setSubs]    = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    DB.getSubmissions(task.id)
+      .then(setSubs)
+      .catch(e => console.error(e))
+      .finally(() => setLoading(false));
+  }, [task.id]);
+
   const fields = task.answerFields || [];
 
   return (
@@ -1483,7 +1506,12 @@ function SubmissionReviewer({ task, onBack }) {
         </span>
       </div>
 
-      {subs.length === 0 ? (
+      {loading ? (
+        <div style={{textAlign:'center', padding:'60px 0'}}>
+          <span className="spinner dark" style={{width:32,height:32,borderWidth:4}} />
+          <div style={{marginTop:12, fontSize:14, color:'var(--stone)'}}>読み込み中…</div>
+        </div>
+      ) : subs.length === 0 ? (
         <div style={{textAlign:'center', padding:'60px 0', color:'var(--stone)'}}>
           <div style={{fontSize:40, marginBottom:10}}>📭</div>
           まだ提出がありません
@@ -1502,13 +1530,14 @@ function SubmissionReviewer({ task, onBack }) {
               {subs.map(sub => (
                 <tr key={sub.id}>
                   <td><strong>{sub.nickname}</strong></td>
-                  <td className="mono" style={{fontSize:12}}>{sub.submittedAt.slice(0,19).replace('T',' ')}</td>
+                  <td className="mono" style={{fontSize:12}}>
+                    {sub.submittedAt?.slice(0,19).replace('T',' ')}
+                  </td>
                   {fields.map(f => (
                     <td key={f.id}>
                       {sub.answers[f.id]
                         ? <span className="answer-chip">{sub.answers[f.id]}</span>
-                        : <span style={{color:'var(--stone-lt)',fontSize:12}}>未回答</span>
-                      }
+                        : <span style={{color:'var(--stone-lt)',fontSize:12}}>未回答</span>}
                     </td>
                   ))}
                 </tr>
@@ -1526,43 +1555,19 @@ function SubmissionReviewer({ task, onBack }) {
 ══════════════════════════════════════════ */
 function App() {
   const toast = useToast();
-  const [role, setRole]       = useState(null);      // null | 'teacher' | 'student'
-  const [teacher, setTeacher] = useState(null);
-  const [view, setView]       = useState('dashboard'); // dashboard | create | review
+  const [role,       setRole]       = useState(null);
+  const [teacher,    setTeacher]    = useState(null);
+  const [view,       setView]       = useState('dashboard');
   const [reviewTask, setReviewTask] = useState(null);
-
-  /* Student */
   const [studentTask, setStudentTask] = useState(null);
   const [studentNick, setStudentNick] = useState('');
 
   const goHome = () => { setRole(null); setStudentTask(null); };
 
-  /* seed demo data */
-  useEffect(() => {
-    if (DB.tasks.length > 0) return;
-    const demo = {
-      id: genId(),
-      title: '一次方程式 練習プリント①',
-      description: '教科書 p.42 の問題です。途中式も書いてください。',
-      imageDataUrl: null,
-      accessCode: 'DEMO01',
-      createdBy: 'demo',
-      createdAt: new Date().toISOString(),
-      isPublished: true,
-      answerFields: [
-        { id: genId(), type: 'number', x: 5, y: 5, width: 35, height: 8, label: '問1' },
-        { id: genId(), type: 'text',   x: 5, y: 18, width: 50, height: 8, label: '問2' },
-        { id: genId(), type: 'number', x: 5, y: 31, width: 35, height: 8, label: '問3' },
-      ],
-    };
-    DB.tasks.push(demo);
-  }, []);
-
   const renderTeacher = () => {
     if (!teacher) return <TeacherLogin onLogin={u => { setTeacher(u); setView('dashboard'); }} />;
     if (view === 'create') return (
-      <TaskCreator teacher={teacher} toast={toast}
-        onDone={() => setView('dashboard')} />
+      <TaskCreator teacher={teacher} toast={toast} onDone={() => setView('dashboard')} />
     );
     if (view === 'review' && reviewTask) return (
       <SubmissionReviewer task={reviewTask} onBack={() => setView('dashboard')} />
@@ -1586,7 +1591,6 @@ function App() {
     );
   };
 
-  /* Landing */
   if (!role) return (
     <div className="app">
       <Header role={null} onRoleChange={setRole} onHome={goHome} />
@@ -1594,8 +1598,7 @@ function App() {
         <Kamon size={88} />
         <div className="landing-title">紅月計算塾</div>
         <div className="landing-subtitle">
-          学習支援ボランティアのための<br />
-          デジタル課題プラットフォーム
+          学習支援ボランティアのための<br />デジタル課題プラットフォーム
         </div>
         <div className="landing-cards">
           <div className="landing-card" onClick={() => setRole('teacher')}>
@@ -1610,9 +1613,6 @@ function App() {
             <div className="card-desc">課題コードを入力して、プリントに回答し提出します。スマホ・PCどちらでも。</div>
             <div className="card-cta">課題を開く →</div>
           </div>
-        </div>
-        <div style={{fontSize:12, color:'var(--stone-lt)', marginTop:8}}>
-          デモコード: <strong style={{fontFamily:'monospace', color:'var(--crimson)'}}>DEMO01</strong> で体験できます
         </div>
       </div>
       <Toasts toasts={toast.toasts} />
@@ -1634,3 +1634,4 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 </script>
 </body>
 </html>
+
