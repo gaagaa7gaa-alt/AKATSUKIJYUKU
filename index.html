@@ -652,8 +652,8 @@ const { useState, useEffect, useRef, useCallback } = React;
    ★ SUPABASE 設定 ★
    以下の2行を自分のプロジェクト情報に書き換えてください
 ══════════════════════════════════════════ */
-const SUPABASE_URL  = 'https://ugtnpkvrlvlgyjcuwotb.supabase.co';   // 例: https://abcdefgh.supabase.co
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVndG5wa3ZybHZsZ3lqY3V3b3RiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1MzI4MTEsImV4cCI6MjA4ODEwODgxMX0.2EvzmxxmtX2lplCUWfmfqIXFyzrDGBGfnDSkNU2z93Y'; // Project Settings → API → anon public
+const SUPABASE_URL  = 'YOUR_SUPABASE_URL';   // 例: https://abcdefgh.supabase.co
+const SUPABASE_ANON = 'YOUR_SUPABASE_ANON_KEY'; // Project Settings → API → anon public
 
 const isConfigured = SUPABASE_URL !== 'YOUR_SUPABASE_URL';
 const supabase = isConfigured
@@ -1634,4 +1634,3 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 </script>
 </body>
 </html>
-
