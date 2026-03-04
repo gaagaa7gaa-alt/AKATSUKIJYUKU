@@ -254,15 +254,12 @@ const { useState, useEffect, useRef, useCallback } = React;
 
 /* ══════════════════════════════════════════
    ★ SUPABASE 設定 ★
-   以下の2行を自分のプロジェクト情報に書き換えてください
 ══════════════════════════════════════════ */
-const SUPABASE_URL  = 'https://ugtnpkvrlvlgyjcuwotb.supabase.co';   // 例: https://abcdefgh.supabase.co
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVndG5wa3ZybHZsZ3lqY3V3b3RiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1MzI4MTEsImV4cCI6MjA4ODEwODgxMX0.2EvzmxxmtX2lplCUWfmfqIXFyzrDGBGfnDSkNU2z93Y'; // Project Settings → API → anon public
+const SUPABASE_URL  = 'https://ugtnpkvrlvlgyjcuwotb.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVndG5wa3ZybHZsZ3lqY3V3b3RiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1MzI4MTEsImV4cCI6MjA4ODEwODgxMX0.2EvzmxxmtX2lplCUWfmfqIXFyzrDGBGfnDSkNU2z93Y';
 
 const isConfigured = SUPABASE_URL !== 'YOUR_SUPABASE_URL';
-const supabase = isConfigured
-  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON)
-  : null;
+const supabase = isConfigured ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON) : null;
 
 /* ══════════════════════════════════════════
    DB API
@@ -558,10 +555,9 @@ function TeacherRegister({ onDone, toast }) {
       await DB.createApplication({
         id: genId(),
         teacher_id: tid.trim(),
-        password_hash: pass, // 本番ではハッシュ化推奨
+        password_hash: pass,
         status: 'pending',
         applied_at: new Date().toISOString(),
-        votes: {},
       });
       setDone(true);
       toast.show('申請を送信しました', 'success');
@@ -1332,4 +1328,3 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 </body>
 </html>
-
