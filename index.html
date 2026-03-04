@@ -609,7 +609,7 @@ function TeacherRegister({ onDone, toast }) {
 /* ══════════════════════════════════════════
    教師ダッシュボード
 ══════════════════════════════════════════ */
-function TeacherDashboard({ teacher, onCreate, onReview, toast }) {
+function TeacherDashboard({ teacher, onCreate, onReview, toast, onLogout }) {
   const [tasks,      setTasks]      = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [subCounts,  setSubCounts]  = useState({});
@@ -729,6 +729,7 @@ function TeacherDashboard({ teacher, onCreate, onReview, toast }) {
             {loading ? <span className="spinner dark"/> : '↻'} 更新
           </button>
           <button className="btn btn-primary" onClick={onCreate}>＋ 新しい課題を作成</button>
+          <button className="btn btn-ghost btn-sm" style={{color:'var(--crimson)'}} onClick={onLogout}>ログアウト</button>
         </div>
       </div>
 
@@ -1268,20 +1269,40 @@ function AnswerSheet({ task, nickname, onSubmit }) {
 ══════════════════════════════════════════ */
 function App() {
   const toast = useToast();
-  const [role,        setRole]        = useState(null);
-  const [teacher,     setTeacher]     = useState(null);
+
+  // ログイン状態をlocalStorageから復元
+  const savedSession = (() => {
+    try { return JSON.parse(localStorage.getItem('kogetsu_session') || 'null'); } catch { return null; }
+  })();
+
+  const [role,        setRole]        = useState(savedSession?.role || null);
+  const [teacher,     setTeacher]     = useState(savedSession?.teacher || null);
   const [view,        setView]        = useState('dashboard');
   const [reviewTask,  setReviewTask]  = useState(null);
   const [studentTask, setStudentTask] = useState(null);
   const [studentNick, setStudentNick] = useState('');
 
+  // roleとteacherが変わったらlocalStorageに保存
+  useEffect(() => {
+    if (role === 'teacher' && teacher) {
+      localStorage.setItem('kogetsu_session', JSON.stringify({ role, teacher }));
+    } else {
+      localStorage.removeItem('kogetsu_session');
+    }
+  }, [role, teacher]);
+
   const goHome = () => { setRole(null); setStudentTask(null); };
+
+  const handleLogout = () => {
+    localStorage.removeItem('kogetsu_session');
+    setTeacher(null); setRole(null); setView('dashboard');
+  };
 
   const renderTeacher = () => {
     if(!teacher) return <TeacherAuth onLogin={u=>{setTeacher(u);setView('dashboard');}} toast={toast}/>;
     if(view==='create') return <TaskCreator teacher={teacher} toast={toast} onDone={()=>setView('dashboard')}/>;
     if(view==='review'&&reviewTask) return <SubmissionReviewer task={reviewTask} onBack={()=>setView('dashboard')}/>;
-    return <TeacherDashboard teacher={teacher} toast={toast} onCreate={()=>setView('create')} onReview={t=>{setReviewTask(t);setView('review');}}/>;
+    return <TeacherDashboard teacher={teacher} toast={toast} onCreate={()=>setView('create')} onReview={t=>{setReviewTask(t);setView('review');}} onLogout={handleLogout}/>;
   };
 
   const renderStudent = () => {
