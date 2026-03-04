@@ -960,16 +960,121 @@ function ScoringTab({ teacher, toast }) {
 
 /* ── ホワイトボードタブ（教師） ── */
 function WhiteboardTab({ teacher, toast }) {
-  const [tasks,setTasks]=useState([]); const [isLive,setIsLive]=useState(false); const [sessionId,setSessionId]=useState(null); const [sessionCode,setSessionCode]=useState(''); const [selTaskId,setSelTaskId]=useState(''); const [showStart,setShowStart]=useState(false);
-  const [tool,setTool]=useState('pen'); // pen | line | circle
-  const [color,setColor]=useState('#1A1410');
-  const [strokeWidth,setStrokeWidth]=useState(3);
-  const canvasRef=useRef(null); const drawing=useRef(false); const startPos=useRef({x:0,y:0}); const snapshotRef=useRef(null);
+  const [tasks,setTasks]       = useState([]);
+  const [isLive,setIsLive]     = useState(false);
+  const [sessionCode,setSessionCode] = useState('');
+  const [selTaskId,setSelTaskId]     = useState('');
+  const [showStart,setShowStart]     = useState(false);
+  const [tool,setTool]         = useState('pen');
+  const [color,setColor]       = useState('#1A1410');
+  const [lineWidth,setLineWidth] = useState(3);
+  // undo: array of dataURL snapshots
+  const [undoStack,setUndoStack] = useState([]);
 
+  // Use refs so event handlers always see latest values
+  const canvasRef    = useRef(null);
+  const sessionIdRef = useRef(null);   // ← FIX: ref instead of state for broadcast
+  const isLiveRef    = useRef(false);
+  const toolRef      = useRef('pen');
+  const colorRef     = useRef('#1A1410');
+  const lineWidthRef = useRef(3);
+  const drawing      = useRef(false);
+  const startPos     = useRef({x:0,y:0});
+  const strokeSnap   = useRef(null);   // snapshot before each stroke (for live preview)
+
+  useEffect(()=>{ DB.getTasks().then(setTasks).catch(()=>{}); },[]);
+
+  // Keep refs in sync with state
+  useEffect(()=>{ isLiveRef.current   = isLive;  },[isLive]);
+  useEffect(()=>{ toolRef.current     = tool;    },[tool]);
+  useEffect(()=>{ colorRef.current    = color;   },[color]);
+  useEffect(()=>{ lineWidthRef.current= lineWidth;},[lineWidth]);
+
+  /* ── broadcast: always reads from ref ── */
+  const broadcast = async (strokeData) => {
+    const sid = sessionIdRef.current;
+    if (!supabase || !sid) return;
+    try {
+      await supabase.from('whiteboard_strokes').insert([{
+        id: genId(), session_id: sid,
+        stroke_data: strokeData,
+        created_at: new Date().toISOString()
+      }]);
+    } catch(e) { console.error('broadcast error', e); }
+  };
+
+  /* ── session control ── */
+  const startLive = async () => {
+    const code = genCode();
+    const id   = genId();
+    try {
+      await DB.createWbSession({ id, access_code:code, task_id:selTaskId||null, is_live:true, created_by:teacher.teacherId, created_at:new Date().toISOString() });
+      sessionIdRef.current = id;
+      setSessionCode(code);
+      setIsLive(true);
+      setShowStart(false);
+      setUndoStack([]);
+      toast.show('配信開始！コード: '+code, 'success');
+    } catch(e) { toast.show('配信開始エラー: '+e.message, 'error'); }
+  };
+
+  const stopLive = async () => {
+    const sid = sessionIdRef.current;
+    if (sid) {
+      try {
+        // まずストロークを全削除してからセッションを終了
+        await DB.clearWbStrokes(sid);
+        await DB.endWbSession(sid);
+      } catch(e) { console.error('stopLive error', e); }
+    }
+    sessionIdRef.current = null;
+    setIsLive(false);
+    setSessionCode('');
+    setUndoStack([]);
+    const canvas = canvasRef.current;
+    if (canvas) { const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height); }
+    toast.show('配信を終了しました');
+  };
+
+  const clearCanvas = async () => {
+    const canvas=canvasRef.current; if(!canvas)return;
+    const ctx=canvas.getContext('2d');
+    // undoに現状を積んでからクリア
+    setUndoStack(s=>[...s, canvas.toDataURL('image/png')]);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const sid=sessionIdRef.current;
+    if (sid) await DB.clearWbStrokes(sid);
+    await broadcast({type:'clear'});
+  };
+
+  /* ── undo ── */
+  const undo = async () => {
+    if (undoStack.length===0) return;
+    const prev = undoStack[undoStack.length-1];
+    setUndoStack(s=>s.slice(0,-1));
+    const canvas=canvasRef.current; if(!canvas)return;
+    const ctx=canvas.getContext('2d');
+    if (prev==='__empty__') {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      await broadcast({type:'clear'});
+    } else {
+      const img=new Image();
+      img.onload=async()=>{
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        ctx.drawImage(img,0,0);
+        await broadcast({type:'snapshot', data:canvas.toDataURL('image/png')});
+      };
+      img.src=prev;
+    }
+  };
+
+  /* ── canvas size ── */
   useEffect(()=>{
-    DB.getTasks().then(setTasks).catch(()=>{});
+    const canvas=canvasRef.current; if(!canvas)return;
+    canvas.width=900; canvas.height=600;
   },[]);
 
+  /* ── pointer helpers ── */
   const getPos = (e,canvas) => {
     const rect=canvas.getBoundingClientRect();
     const scaleX=canvas.width/rect.width, scaleY=canvas.height/rect.height;
@@ -977,100 +1082,66 @@ function WhiteboardTab({ teacher, toast }) {
     return {x:(src.clientX-rect.left)*scaleX, y:(src.clientY-rect.top)*scaleY};
   };
 
-  const broadcast = useCallback(async (strokeData) => {
-    if (!supabase||!sessionId) return;
-    try {
-      await supabase.from('whiteboard_strokes').insert([{id:genId(),session_id:sessionId,stroke_data:strokeData,created_at:new Date().toISOString()}]);
-    } catch(e){}
-  },[sessionId]);
-
-  const startLive = async () => {
-    const code = genCode();
-    const id   = genId();
-    try {
-      await DB.createWbSession({ id, access_code:code, task_id:selTaskId||null, is_live:true, created_by:teacher.teacherId, created_at:new Date().toISOString() });
-      setSessionId(id); setSessionCode(code); setIsLive(true); setShowStart(false);
-      toast.show('配信開始しました！コード: '+code,'success');
-    } catch(e){toast.show('配信開始エラー: '+e.message,'error');}
-  };
-
-  const stopLive = async () => {
-    try {
-      await DB.endWbSession(sessionId);
-      await DB.clearWbStrokes(sessionId);
-    } catch(e){}
-    setIsLive(false); setSessionId(null); setSessionCode('');
-    const canvas=canvasRef.current;
-    if (canvas) { const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height); }
-    toast.show('配信を終了しました');
-  };
-
-  const clearCanvas = async () => {
-    const canvas=canvasRef.current; if(!canvas)return;
-    const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height);
-    if (sessionId) await DB.clearWbStrokes(sessionId);
-    await broadcast({type:'clear'});
-  };
-
   const onDown = (e) => {
-    if (!isLive) return;
+    if (!isLiveRef.current) return;
     e.preventDefault();
     const canvas=canvasRef.current; const ctx=canvas.getContext('2d');
     const pos=getPos(e,canvas);
-    drawing.current=true; startPos.current=pos;
-    snapshotRef.current=ctx.getImageData(0,0,canvas.width,canvas.height);
-    if (tool==='pen'){ctx.beginPath();ctx.moveTo(pos.x,pos.y);}
+    // Save undo snapshot before stroke begins
+    setUndoStack(s=>[...s, canvas.toDataURL('image/png')]);
+    drawing.current=true;
+    startPos.current=pos;
+    strokeSnap.current=ctx.getImageData(0,0,canvas.width,canvas.height);
+    if (toolRef.current==='pen') { ctx.beginPath(); ctx.moveTo(pos.x,pos.y); }
   };
 
   const onMove = (e) => {
-    if (!drawing.current||!isLive) return;
+    if (!drawing.current || !isLiveRef.current) return;
     e.preventDefault();
     const canvas=canvasRef.current; const ctx=canvas.getContext('2d');
     const pos=getPos(e,canvas);
-    ctx.strokeStyle=color; ctx.lineWidth=strokeWidth; ctx.lineCap='round'; ctx.lineJoin='round';
-    if (tool==='pen'){
+    ctx.strokeStyle=colorRef.current;
+    ctx.lineWidth=lineWidthRef.current;
+    ctx.lineCap='round'; ctx.lineJoin='round';
+    if (toolRef.current==='pen') {
       ctx.lineTo(pos.x,pos.y); ctx.stroke();
     } else {
-      ctx.putImageData(snapshotRef.current,0,0);
+      ctx.putImageData(strokeSnap.current,0,0);
       ctx.beginPath();
-      if (tool==='line'){
-        ctx.moveTo(startPos.current.x,startPos.current.y); ctx.lineTo(pos.x,pos.y); ctx.stroke();
-      } else if (tool==='circle'){
+      if (toolRef.current==='line') {
+        ctx.moveTo(startPos.current.x,startPos.current.y);
+        ctx.lineTo(pos.x,pos.y); ctx.stroke();
+      } else if (toolRef.current==='circle') {
         const rx=Math.abs(pos.x-startPos.current.x)/2, ry=Math.abs(pos.y-startPos.current.y)/2;
-        const cx=startPos.current.x+(pos.x-startPos.current.x)/2, cy=startPos.current.y+(pos.y-startPos.current.y)/2;
-        ctx.ellipse(cx,cy,rx,ry,0,0,2*Math.PI); ctx.stroke();
+        const cx=startPos.current.x+(pos.x-startPos.current.x)/2;
+        const cy=startPos.current.y+(pos.y-startPos.current.y)/2;
+        ctx.ellipse(cx,cy,Math.max(1,rx),Math.max(1,ry),0,0,2*Math.PI); ctx.stroke();
       }
     }
   };
 
   const onUp = async (e) => {
-    if (!drawing.current||!isLive) return;
-    e.preventDefault();
+    if (!drawing.current || !isLiveRef.current) return;
+    if (e.type!=='touchend') e.preventDefault();
     drawing.current=false;
     const canvas=canvasRef.current;
     const dataUrl=canvas.toDataURL('image/png');
-    await broadcast({type:'snapshot',data:dataUrl});
+    await broadcast({type:'snapshot', data:dataUrl});
   };
-
-  useEffect(()=>{
-    const canvas=canvasRef.current; if(!canvas)return;
-    canvas.width=900; canvas.height=600;
-  },[]);
 
   const colors=['#1A1410','#9B1B30','#C9972C','#1E40AF','#065F46','#7C3AED','#FFFFFF'];
 
   return (
     <div className="wb-wrap">
-      {/* コントロールバー */}
+      {/* トップバー */}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:10,marginBottom:8}}>
         <div className="dashboard-title">🖊 ホワイトボード</div>
         <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
           {isLive&&(
             <>
               <div className="live-badge"><span className="live-dot"/>LIVE</div>
-              <div style={{fontFamily:'DM Mono',fontSize:18,fontWeight:700,color:'var(--crimson)',letterSpacing:'.1em',background:'rgba(155,27,48,.07)',padding:'4px 12px',borderRadius:8}}>
-                {sessionCode}
-              </div>
+              <div style={{fontFamily:'DM Mono',fontSize:18,fontWeight:700,color:'var(--crimson)',letterSpacing:'.1em',background:'rgba(155,27,48,.07)',padding:'4px 12px',borderRadius:8}}>{sessionCode}</div>
+              <button className="btn btn-ghost btn-sm" onClick={undo} disabled={undoStack.length===0} title="やり直し (Ctrl+Z)">↩ やり直し</button>
               <button className="btn btn-ghost btn-sm" onClick={clearCanvas}>🗑 クリア</button>
               <button className="btn btn-reject btn-sm" onClick={stopLive}>⏹ 配信終了</button>
             </>
@@ -1082,18 +1153,21 @@ function WhiteboardTab({ teacher, toast }) {
       {/* ツールバー */}
       <div className="wb-toolbar">
         <span style={{fontSize:12,fontWeight:700,color:'var(--stone)'}}>ツール：</span>
-        {[['pen','✏️','フリー'],['line','📏','直線'],['circle','⭕','円']].map(([t,icon,label])=>(
+        {[['pen','✏️','フリー線'],['line','📏','直線'],['circle','⭕','楕円']].map(([t,icon,label])=>(
           <button key={t} className={`wb-tool-btn ${tool===t?'active':''}`} title={label} onClick={()=>setTool(t)}>{icon}</button>
         ))}
         <div style={{width:1,height:24,background:'var(--stone-lt)',margin:'0 4px'}}/>
         <span style={{fontSize:12,fontWeight:700,color:'var(--stone)'}}>色：</span>
         {colors.map(c=>(
-          <div key={c} className={`wb-color-btn ${color===c?'active':''}`} style={{background:c,boxShadow:c==='#FFFFFF'?'inset 0 0 0 1px #ccc':undefined}} onClick={()=>setColor(c)}/>
+          <div key={c} className={`wb-color-btn ${color===c?'active':''}`}
+            style={{background:c,boxShadow:c==='#FFFFFF'?'inset 0 0 0 1px #ccc':undefined}}
+            onClick={()=>setColor(c)}/>
         ))}
         <div style={{width:1,height:24,background:'var(--stone-lt)',margin:'0 4px'}}/>
         <span style={{fontSize:12,fontWeight:700,color:'var(--stone)'}}>太さ：</span>
         {[2,4,8,14].map(w=>(
-          <button key={w} className={`wb-tool-btn ${strokeWidth===w?'active':''}`} style={{fontSize:10,fontWeight:700}} onClick={()=>setStrokeWidth(w)}>{w}</button>
+          <button key={w} className={`wb-tool-btn ${lineWidth===w?'active':''}`}
+            style={{fontSize:10,fontWeight:700}} onClick={()=>setLineWidth(w)}>{w}</button>
         ))}
       </div>
 
@@ -1113,7 +1187,7 @@ function WhiteboardTab({ teacher, toast }) {
         )}
       </div>
       <div style={{fontSize:12,color:'var(--stone)'}}>
-        配信中は生徒がアクセスコードを入力するとリアルタイムで板書が見られます
+        配信中、生徒がコードを入力するとリアルタイムで板書が見られます
       </div>
 
       {/* 配信開始モーダル */}
@@ -1127,10 +1201,10 @@ function WhiteboardTab({ teacher, toast }) {
                 <option value="">── 白紙ボード ──</option>
                 {tasks.map(t=><option key={t.id} value={t.id}>{t.title}</option>)}
               </select>
-              <div className="form-hint">課題プリント画像をボードの背景に表示します</div>
+              <div className="form-hint">選択した課題のプリント画像が背景に表示されます</div>
             </div>
             <div style={{background:'var(--paper)',borderRadius:10,padding:14,fontSize:13,color:'var(--stone)',lineHeight:1.8}}>
-              配信すると新しいアクセスコードが発行されます。<br/>
+              配信するとLIVEコードが発行されます。<br/>
               生徒はそのコードを入力すると板書をリアルタイムで視聴できます。
             </div>
             <div className="modal-actions">
@@ -1143,6 +1217,7 @@ function WhiteboardTab({ teacher, toast }) {
     </div>
   );
 }
+
 
 /* ══════════════════════════════════
    課題作成
