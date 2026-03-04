@@ -1,250 +1,262 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>紅月計算塾</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600;900&family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600;900&family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --crimson:    #9B1B30;
-    --crimson-dk: #6D0F20;
-    --crimson-lt: #C84054;
-    --gold:       #C9972C;
-    --gold-lt:    #F0C060;
-    --ink:        #1A1410;
-    --paper:      #F9F4ED;
-    --paper-dk:   #EDE5D8;
-    --stone:      #8A7F74;
-    --stone-lt:   #C4BAB0;
-    --white:      #FFFFFF;
-    --shadow:     rgba(26,20,16,.18);
-    --r:          8px;
-  }
-  html, body, #root { height:100%; width:100%; font-family:'Noto Sans JP',sans-serif; background:var(--paper); color:var(--ink); }
-  ::-webkit-scrollbar { width:6px; }
-  ::-webkit-scrollbar-track { background:var(--paper-dk); }
-  ::-webkit-scrollbar-thumb { background:var(--stone-lt); border-radius:3px; }
-  .mono { font-family:'DM Mono',monospace; }
-  .serif { font-family:'Noto Serif JP',serif; }
-  .app { min-height:100vh; display:flex; flex-direction:column; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --crimson:#9B1B30;--crimson-dk:#6D0F20;--crimson-lt:#C84054;
+  --gold:#C9972C;--gold-lt:#F0C060;
+  --ink:#1A1410;--paper:#F9F4ED;--paper-dk:#EDE5D8;
+  --stone:#8A7F74;--stone-lt:#C4BAB0;--white:#FFFFFF;
+  --shadow:rgba(26,20,16,.18);--r:8px;
+}
+html,body,#root{height:100%;width:100%;font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--ink);}
+::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:var(--paper-dk);}::-webkit-scrollbar-thumb{background:var(--stone-lt);border-radius:3px;}
+.mono{font-family:'DM Mono',monospace;}.serif{font-family:'Noto Serif JP',serif;}
+.app{min-height:100vh;display:flex;flex-direction:column;}
 
-  /* ── Header ── */
-  .header { background:var(--crimson-dk); color:var(--paper); padding:0 24px; height:58px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:0 2px 12px var(--shadow); }
-  .header-logo { display:flex; align-items:center; gap:10px; font-family:'Noto Serif JP',serif; font-size:18px; font-weight:900; letter-spacing:.05em; cursor:pointer; user-select:none; }
-  .header-logo .moon { width:28px; height:28px; background:var(--gold); border-radius:50%; position:relative; overflow:hidden; flex-shrink:0; }
-  .header-logo .moon::after { content:''; position:absolute; top:3px; left:8px; width:22px; height:22px; background:var(--crimson-dk); border-radius:50%; }
-  .header-nav { display:flex; gap:8px; align-items:center; }
-  .nav-btn { padding:6px 14px; border-radius:20px; border:1.5px solid rgba(255,255,255,.35); background:transparent; color:var(--paper); font-size:13px; font-family:'Noto Sans JP',sans-serif; cursor:pointer; transition:all .18s; }
-  .nav-btn:hover { background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.6); }
-  .nav-btn.active { background:var(--gold); border-color:var(--gold); color:var(--ink); font-weight:700; }
+/* Header */
+.header{background:var(--crimson-dk);color:var(--paper);padding:0 24px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px var(--shadow);}
+.header-logo{display:flex;align-items:center;gap:10px;font-family:'Noto Serif JP',serif;font-size:18px;font-weight:900;letter-spacing:.05em;cursor:pointer;user-select:none;}
+.header-logo .moon{width:28px;height:28px;background:var(--gold);border-radius:50%;position:relative;overflow:hidden;flex-shrink:0;}
+.header-logo .moon::after{content:'';position:absolute;top:3px;left:8px;width:22px;height:22px;background:var(--crimson-dk);border-radius:50%;}
+.header-nav{display:flex;gap:8px;align-items:center;}
+.nav-btn{padding:6px 14px;border-radius:20px;border:1.5px solid rgba(255,255,255,.35);background:transparent;color:var(--paper);font-size:13px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:all .18s;}
+.nav-btn:hover{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.6);}
+.nav-btn.active{background:var(--gold);border-color:var(--gold);color:var(--ink);font-weight:700;}
 
-  /* ── Layout ── */
-  .main { flex:1; padding:32px 24px; max-width:1100px; margin:0 auto; width:100%; }
+/* Layout */
+.main{flex:1;padding:32px 24px;max-width:1100px;margin:0 auto;width:100%;}
 
-  /* ── Landing ── */
-  .landing { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:calc(100vh - 58px); text-align:center; gap:32px; padding:40px 24px; }
-  .landing-title { font-family:'Noto Serif JP',serif; font-size:clamp(32px,6vw,52px); font-weight:900; color:var(--crimson-dk); letter-spacing:.08em; line-height:1.2; }
-  .landing-subtitle { font-size:15px; color:var(--stone); line-height:1.8; max-width:460px; }
-  .landing-cards { display:flex; gap:20px; flex-wrap:wrap; justify-content:center; max-width:700px; }
-  .landing-card { flex:1; min-width:240px; max-width:300px; background:var(--white); border:2px solid var(--paper-dk); border-radius:16px; padding:28px 24px; display:flex; flex-direction:column; gap:12px; cursor:pointer; transition:all .22s cubic-bezier(.25,.8,.25,1); box-shadow:0 2px 8px var(--shadow); text-align:left; }
-  .landing-card:hover { border-color:var(--crimson); box-shadow:0 8px 28px rgba(155,27,48,.15); transform:translateY(-4px); }
-  .card-icon { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; }
-  .card-icon.teacher { background:rgba(155,27,48,.1); }
-  .card-icon.student  { background:rgba(201,151,44,.1); }
-  .card-label { font-family:'Noto Serif JP',serif; font-size:18px; font-weight:700; color:var(--crimson-dk); }
-  .card-desc { font-size:13px; color:var(--stone); line-height:1.7; }
-  .card-cta { margin-top:8px; display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:700; color:var(--crimson); }
+/* Landing */
+.landing{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 58px);text-align:center;gap:32px;padding:40px 24px;}
+.landing-title{font-family:'Noto Serif JP',serif;font-size:clamp(32px,6vw,52px);font-weight:900;color:var(--crimson-dk);letter-spacing:.08em;line-height:1.2;}
+.landing-subtitle{font-size:15px;color:var(--stone);line-height:1.8;max-width:460px;}
+.landing-cards{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;max-width:700px;}
+.landing-card{flex:1;min-width:240px;max-width:300px;background:var(--white);border:2px solid var(--paper-dk);border-radius:16px;padding:28px 24px;display:flex;flex-direction:column;gap:12px;cursor:pointer;transition:all .22s cubic-bezier(.25,.8,.25,1);box-shadow:0 2px 8px var(--shadow);text-align:left;}
+.landing-card:hover{border-color:var(--crimson);box-shadow:0 8px 28px rgba(155,27,48,.15);transform:translateY(-4px);}
+.card-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;}
+.card-icon.teacher{background:rgba(155,27,48,.1);}.card-icon.student{background:rgba(201,151,44,.1);}
+.card-label{font-family:'Noto Serif JP',serif;font-size:18px;font-weight:700;color:var(--crimson-dk);}
+.card-desc{font-size:13px;color:var(--stone);line-height:1.7;}
+.card-cta{margin-top:8px;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--crimson);}
 
-  /* ── Forms ── */
-  .form-box { background:var(--white); border:2px solid var(--paper-dk); border-radius:16px; padding:36px; max-width:480px; margin:0 auto; box-shadow:0 4px 20px var(--shadow); }
-  .form-title { font-family:'Noto Serif JP',serif; font-size:22px; font-weight:700; color:var(--crimson-dk); margin-bottom:24px; }
-  .form-group { display:flex; flex-direction:column; gap:6px; margin-bottom:18px; }
-  .form-label { font-size:13px; font-weight:700; color:var(--ink); }
-  .form-hint { font-size:12px; color:var(--stone); margin-top:2px; }
-  .form-input, .form-select, .form-textarea { width:100%; padding:10px 14px; border:2px solid var(--paper-dk); border-radius:var(--r); background:var(--paper); font-family:'Noto Sans JP',sans-serif; font-size:15px; color:var(--ink); transition:border-color .15s; outline:none; }
-  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color:var(--crimson); background:var(--white); }
-  .form-textarea { resize:vertical; min-height:80px; }
+/* Forms */
+.form-box{background:var(--white);border:2px solid var(--paper-dk);border-radius:16px;padding:36px;max-width:480px;margin:0 auto;box-shadow:0 4px 20px var(--shadow);}
+.form-title{font-family:'Noto Serif JP',serif;font-size:22px;font-weight:700;color:var(--crimson-dk);margin-bottom:24px;}
+.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;}
+.form-label{font-size:13px;font-weight:700;color:var(--ink);}
+.form-hint{font-size:12px;color:var(--stone);margin-top:2px;}
+.form-input,.form-select,.form-textarea{width:100%;padding:10px 14px;border:2px solid var(--paper-dk);border-radius:var(--r);background:var(--paper);font-family:'Noto Sans JP',sans-serif;font-size:15px;color:var(--ink);transition:border-color .15s;outline:none;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--crimson);background:var(--white);}
+.form-textarea{resize:vertical;min-height:80px;}
 
-  /* ── Buttons ── */
-  .btn { padding:11px 24px; border-radius:8px; border:none; font-family:'Noto Sans JP',sans-serif; font-size:14px; font-weight:700; cursor:pointer; transition:all .18s; display:inline-flex; align-items:center; gap:8px; white-space:nowrap; }
-  .btn-primary { background:var(--crimson); color:var(--white); }
-  .btn-primary:hover { background:var(--crimson-dk); box-shadow:0 4px 14px rgba(155,27,48,.3); }
-  .btn-secondary { background:transparent; border:2px solid var(--crimson); color:var(--crimson); }
-  .btn-secondary:hover { background:rgba(155,27,48,.06); }
-  .btn-gold { background:var(--gold); color:var(--ink); }
-  .btn-gold:hover { background:var(--gold-lt); }
-  .btn-ghost { background:var(--paper-dk); color:var(--stone); }
-  .btn-ghost:hover { background:var(--stone-lt); color:var(--ink); }
-  .btn-sm { padding:7px 14px; font-size:12px; border-radius:6px; }
-  .btn-lg { padding:14px 32px; font-size:16px; border-radius:10px; }
-  .btn:disabled { opacity:.45; cursor:not-allowed; }
-  .btn-full { width:100%; justify-content:center; }
-  .btn-approve { background:#D1FAE5; color:#065F46; border:none; }
-  .btn-approve:hover { background:#A7F3D0; }
-  .btn-reject { background:#FEE2E2; color:#991B1B; border:none; }
-  .btn-reject:hover { background:#FECACA; }
+/* Buttons */
+.btn{padding:11px 24px;border-radius:8px;border:none;font-family:'Noto Sans JP',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .18s;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;}
+.btn-primary{background:var(--crimson);color:var(--white);}
+.btn-primary:hover{background:var(--crimson-dk);box-shadow:0 4px 14px rgba(155,27,48,.3);}
+.btn-secondary{background:transparent;border:2px solid var(--crimson);color:var(--crimson);}
+.btn-secondary:hover{background:rgba(155,27,48,.06);}
+.btn-gold{background:var(--gold);color:var(--ink);}.btn-gold:hover{background:var(--gold-lt);}
+.btn-ghost{background:var(--paper-dk);color:var(--stone);}.btn-ghost:hover{background:var(--stone-lt);color:var(--ink);}
+.btn-sm{padding:7px 14px;font-size:12px;border-radius:6px;}
+.btn-lg{padding:14px 32px;font-size:16px;border-radius:10px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn-full{width:100%;justify-content:center;}
+.btn-approve{background:#D1FAE5;color:#065F46;border:none;}.btn-approve:hover{background:#A7F3D0;}
+.btn-reject{background:#FEE2E2;color:#991B1B;border:none;}.btn-reject:hover{background:#FECACA;}
+.btn-live{background:#7C3AED;color:white;}.btn-live:hover{background:#6D28D9;}
 
-  /* ── Badge ── */
-  .badge { display:inline-flex; align-items:center; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; letter-spacing:.03em; }
-  .badge-published { background:#D1FAE5; color:#065F46; }
-  .badge-draft     { background:var(--paper-dk); color:var(--stone); }
-  .badge-pending   { background:#FEF3C7; color:#92400E; }
-  .badge-approved  { background:#D1FAE5; color:#065F46; }
-  .badge-rejected  { background:#FEE2E2; color:#991B1B; }
+/* Badge */
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.03em;}
+.badge-published{background:#D1FAE5;color:#065F46;}
+.badge-draft{background:var(--paper-dk);color:var(--stone);}
+.badge-pending{background:#FEF3C7;color:#92400E;}
+.badge-approved{background:#D1FAE5;color:#065F46;}
+.badge-rejected{background:#FEE2E2;color:#991B1B;}
+.badge-live{background:#EDE9FE;color:#5B21B6;}
 
-  /* ── Dashboard ── */
-  .dashboard-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; flex-wrap:wrap; gap:12px; }
-  .dashboard-title { font-family:'Noto Serif JP',serif; font-size:26px; font-weight:700; color:var(--crimson-dk); }
+/* Dashboard tabs */
+.dash-tabs{display:flex;gap:0;margin-bottom:28px;border:2px solid var(--paper-dk);border-radius:12px;overflow:hidden;background:var(--paper-dk);}
+.dash-tab{flex:1;padding:11px 8px;background:transparent;color:var(--stone);font-size:13px;font-weight:700;border:none;cursor:pointer;transition:all .15s;font-family:'Noto Sans JP',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;}
+.dash-tab.active{background:var(--white);color:var(--crimson);box-shadow:0 1px 4px var(--shadow);}
 
-  /* ── Filter tabs ── */
-  .filter-tabs { display:flex; gap:6px; margin-bottom:20px; flex-wrap:wrap; }
-  .filter-tab { padding:7px 16px; border-radius:20px; border:2px solid var(--paper-dk); background:var(--white); font-size:13px; font-weight:700; color:var(--stone); cursor:pointer; transition:all .15s; }
-  .filter-tab:hover { border-color:var(--crimson-lt); color:var(--crimson); }
-  .filter-tab.active { background:var(--crimson); border-color:var(--crimson); color:var(--white); }
+/* Dashboard */
+.dashboard-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;flex-wrap:wrap;gap:12px;}
+.dashboard-title{font-family:'Noto Serif JP',serif;font-size:26px;font-weight:700;color:var(--crimson-dk);}
+.filter-tabs{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;}
+.filter-tab{padding:7px 16px;border-radius:20px;border:2px solid var(--paper-dk);background:var(--white);font-size:13px;font-weight:700;color:var(--stone);cursor:pointer;transition:all .15s;}
+.filter-tab:hover{border-color:var(--crimson-lt);color:var(--crimson);}
+.filter-tab.active{background:var(--crimson);border-color:var(--crimson);color:var(--white);}
 
-  /* ── Task grid ── */
-  .task-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:18px; }
-  .task-card { background:var(--white); border:2px solid var(--paper-dk); border-radius:14px; padding:20px; display:flex; flex-direction:column; gap:10px; transition:all .2s; box-shadow:0 1px 6px var(--shadow); }
-  .task-card:hover { border-color:var(--crimson-lt); box-shadow:0 4px 16px rgba(155,27,48,.12); }
-  .task-card-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
-  .task-card-title { font-family:'Noto Serif JP',serif; font-size:16px; font-weight:700; color:var(--ink); line-height:1.4; }
-  .task-card-meta { font-size:12px; color:var(--stone); }
-  .task-card-code { font-family:'DM Mono',monospace; font-size:20px; font-weight:500; color:var(--crimson); letter-spacing:.12em; background:rgba(155,27,48,.06); padding:6px 12px; border-radius:6px; display:inline-block; }
-  .task-card-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
-  .stat-row { display:flex; gap:20px; margin-bottom:28px; flex-wrap:wrap; }
-  .stat-box { flex:1; min-width:120px; background:var(--white); border:2px solid var(--paper-dk); border-radius:12px; padding:18px 20px; text-align:center; }
-  .stat-num { font-family:'DM Mono',monospace; font-size:32px; font-weight:500; color:var(--crimson); }
-  .stat-label { font-size:12px; color:var(--stone); margin-top:4px; }
+/* Task grid */
+.task-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;}
+.task-card{background:var(--white);border:2px solid var(--paper-dk);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:10px;transition:all .2s;box-shadow:0 1px 6px var(--shadow);}
+.task-card:hover{border-color:var(--crimson-lt);box-shadow:0 4px 16px rgba(155,27,48,.12);}
+.task-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+.task-card-title{font-family:'Noto Serif JP',serif;font-size:16px;font-weight:700;color:var(--ink);line-height:1.4;}
+.task-card-meta{font-size:12px;color:var(--stone);}
+.task-card-code{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;color:var(--crimson);letter-spacing:.12em;background:rgba(155,27,48,.06);padding:6px 12px;border-radius:6px;display:inline-block;}
+.task-card-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
+.stat-row{display:flex;gap:20px;margin-bottom:28px;flex-wrap:wrap;}
+.stat-box{flex:1;min-width:120px;background:var(--white);border:2px solid var(--paper-dk);border-radius:12px;padding:18px 20px;text-align:center;}
+.stat-num{font-family:'DM Mono',monospace;font-size:32px;font-weight:500;color:var(--crimson);}
+.stat-label{font-size:12px;color:var(--stone);margin-top:4px;}
 
-  /* ── Creator ── */
-  .creator-layout { display:grid; grid-template-columns:1fr 300px; gap:24px; align-items:start; }
-  @media (max-width:800px) { .creator-layout { grid-template-columns:1fr; } }
-  .canvas-wrapper { background:var(--white); border:2px solid var(--paper-dk); border-radius:14px; overflow:hidden; min-height:420px; position:relative; }
-  .canvas-toolbar { background:var(--paper-dk); padding:10px 16px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; border-bottom:2px solid var(--stone-lt); }
-  .canvas-area { position:relative; width:100%; user-select:none; cursor:crosshair; background:repeating-linear-gradient(0deg,transparent,transparent 27px,rgba(155,27,48,.04) 27px,rgba(155,27,48,.04) 28px),repeating-linear-gradient(90deg,transparent,transparent 27px,rgba(155,27,48,.04) 27px,rgba(155,27,48,.04) 28px); }
-  .canvas-area img { width:100%; height:auto; display:block; pointer-events:none; }
-  .canvas-placeholder { min-height:400px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; color:var(--stone-lt); padding:40px; }
-  .canvas-placeholder .big-icon { font-size:52px; }
-  .canvas-placeholder p { font-size:14px; text-align:center; line-height:1.7; }
-  .field-overlay { position:absolute; border:2.5px solid var(--crimson); background:rgba(155,27,48,.08); border-radius:5px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background .12s; }
-  .field-overlay:hover { background:rgba(155,27,48,.18); }
-  .field-overlay.selected { border-color:var(--gold); background:rgba(201,151,44,.15); box-shadow:0 0 0 3px rgba(201,151,44,.25); }
-  .field-label-chip { position:absolute; top:-12px; left:0; background:var(--crimson); color:var(--white); font-size:9px; font-weight:700; padding:1px 6px; border-radius:3px; white-space:nowrap; pointer-events:none; }
-  .draw-rect { position:absolute; border:2px dashed var(--crimson); background:rgba(155,27,48,.07); pointer-events:none; border-radius:4px; }
-  .side-panel { background:var(--white); border:2px solid var(--paper-dk); border-radius:14px; padding:20px; display:flex; flex-direction:column; gap:16px; }
-  .side-panel-title { font-family:'Noto Serif JP',serif; font-size:15px; font-weight:700; color:var(--crimson-dk); border-bottom:2px solid var(--paper-dk); padding-bottom:10px; }
-  .field-list { display:flex; flex-direction:column; gap:8px; }
-  .field-item { background:var(--paper); border:1.5px solid var(--paper-dk); border-radius:8px; padding:10px 12px; display:flex; align-items:center; gap:8px; cursor:pointer; transition:all .15s; }
-  .field-item:hover { border-color:var(--crimson-lt); }
-  .field-item.selected { border-color:var(--gold); background:rgba(201,151,44,.07); }
-  .field-item-num { width:22px; height:22px; background:var(--crimson); color:var(--white); border-radius:50%; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .field-item-info { flex:1; min-width:0; }
-  .field-item-name { font-size:13px; font-weight:700; color:var(--ink); }
-  .field-item-type { font-size:11px; color:var(--stone); }
-  .type-pill { display:inline-flex; align-items:center; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:700; }
-  .type-text   { background:#DBEAFE; color:#1E40AF; }
-  .type-number { background:#F3E8FF; color:#6B21A8; }
-  .empty-hint { font-size:12px; color:var(--stone-lt); text-align:center; line-height:1.8; padding:8px 0; }
+/* Creator */
+.creator-layout{display:grid;grid-template-columns:1fr 300px;gap:24px;align-items:start;}
+@media(max-width:800px){.creator-layout{grid-template-columns:1fr;}}
+.canvas-wrapper{background:var(--white);border:2px solid var(--paper-dk);border-radius:14px;overflow:hidden;min-height:420px;position:relative;}
+.canvas-toolbar{background:var(--paper-dk);padding:10px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-bottom:2px solid var(--stone-lt);}
+.canvas-area{position:relative;width:100%;user-select:none;cursor:crosshair;background:repeating-linear-gradient(0deg,transparent,transparent 27px,rgba(155,27,48,.04) 27px,rgba(155,27,48,.04) 28px),repeating-linear-gradient(90deg,transparent,transparent 27px,rgba(155,27,48,.04) 27px,rgba(155,27,48,.04) 28px);}
+.canvas-area img{width:100%;height:auto;display:block;pointer-events:none;}
+.canvas-placeholder{min-height:400px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--stone-lt);padding:40px;}
+.canvas-placeholder .big-icon{font-size:52px;}
+.canvas-placeholder p{font-size:14px;text-align:center;line-height:1.7;}
+.field-overlay{position:absolute;border:2.5px solid var(--crimson);background:rgba(155,27,48,.08);border-radius:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .12s;}
+.field-overlay:hover{background:rgba(155,27,48,.18);}
+.field-overlay.selected{border-color:var(--gold);background:rgba(201,151,44,.15);box-shadow:0 0 0 3px rgba(201,151,44,.25);}
+.field-label-chip{position:absolute;top:-12px;left:0;background:var(--crimson);color:var(--white);font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px;white-space:nowrap;pointer-events:none;}
+.draw-rect{position:absolute;border:2px dashed var(--crimson);background:rgba(155,27,48,.07);pointer-events:none;border-radius:4px;}
+.side-panel{background:var(--white);border:2px solid var(--paper-dk);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:16px;}
+.side-panel-title{font-family:'Noto Serif JP',serif;font-size:15px;font-weight:700;color:var(--crimson-dk);border-bottom:2px solid var(--paper-dk);padding-bottom:10px;}
+.field-list{display:flex;flex-direction:column;gap:8px;}
+.field-item{background:var(--paper);border:1.5px solid var(--paper-dk);border-radius:8px;padding:10px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:all .15s;}
+.field-item:hover{border-color:var(--crimson-lt);}
+.field-item.selected{border-color:var(--gold);background:rgba(201,151,44,.07);}
+.field-item-num{width:22px;height:22px;background:var(--crimson);color:var(--white);border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.field-item-info{flex:1;min-width:0;}
+.field-item-name{font-size:13px;font-weight:700;color:var(--ink);}
+.field-item-type{font-size:11px;color:var(--stone);}
+.type-pill{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;}
+.type-text{background:#DBEAFE;color:#1E40AF;}.type-number{background:#F3E8FF;color:#6B21A8;}
+.empty-hint{font-size:12px;color:var(--stone-lt);text-align:center;line-height:1.8;padding:8px 0;}
 
-  /* ── Answer sheet ── */
-  .answer-sheet-wrap { max-width:780px; margin:0 auto; display:flex; flex-direction:column; gap:20px; }
-  .sheet-header { background:var(--crimson-dk); color:var(--white); border-radius:14px; padding:20px 24px; display:flex; flex-direction:column; gap:4px; }
-  .sheet-title { font-family:'Noto Serif JP',serif; font-size:20px; font-weight:700; }
-  .sheet-desc { font-size:13px; opacity:.8; }
-  .sheet-canvas-wrapper { background:var(--white); border:2px solid var(--paper-dk); border-radius:14px; overflow:hidden; position:relative; }
-  .sheet-canvas { position:relative; width:100%; }
-  .sheet-canvas img { width:100%; height:auto; display:block; }
-  .answer-input { position:absolute; background:rgba(255,255,255,.92); border:2.5px solid var(--gold); border-radius:5px; padding:4px 8px; font-family:'DM Mono',monospace; font-size:15px; color:var(--ink); outline:none; transition:border-color .15s,box-shadow .15s; width:100%; height:100%; }
-  .answer-input:focus { border-color:var(--crimson); box-shadow:0 0 0 3px rgba(155,27,48,.15); }
-  .answer-input:disabled { background:rgba(235,235,235,.8); border-color:var(--stone-lt); color:var(--stone); cursor:not-allowed; }
-  .sheet-submit-bar { background:var(--white); border:2px solid var(--paper-dk); border-radius:14px; padding:20px 24px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
-  .sheet-progress { display:flex; flex-direction:column; gap:6px; flex:1; }
-  .progress-bar-bg { height:6px; border-radius:3px; background:var(--paper-dk); overflow:hidden; }
-  .progress-bar-fill { height:100%; background:var(--gold); border-radius:3px; transition:width .4s ease; }
-  .progress-text { font-size:12px; color:var(--stone); }
+/* Answer sheet */
+.answer-sheet-wrap{max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:20px;}
+.sheet-header{background:var(--crimson-dk);color:var(--white);border-radius:14px;padding:20px 24px;display:flex;flex-direction:column;gap:4px;}
+.sheet-title{font-family:'Noto Serif JP',serif;font-size:20px;font-weight:700;}
+.sheet-desc{font-size:13px;opacity:.8;}
+.sheet-canvas-wrapper{background:var(--white);border:2px solid var(--paper-dk);border-radius:14px;overflow:hidden;position:relative;}
+.sheet-canvas{position:relative;width:100%;}
+.sheet-canvas img{width:100%;height:auto;display:block;}
+.answer-input{position:absolute;background:rgba(255,255,255,.92);border:2.5px solid var(--gold);border-radius:5px;padding:4px 8px;font-family:'DM Mono',monospace;font-size:15px;color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s;width:100%;height:100%;}
+.answer-input:focus{border-color:var(--crimson);box-shadow:0 0 0 3px rgba(155,27,48,.15);}
+.answer-input:disabled{background:rgba(235,235,235,.8);border-color:var(--stone-lt);color:var(--stone);cursor:not-allowed;}
+.sheet-submit-bar{background:var(--white);border:2px solid var(--paper-dk);border-radius:14px;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.sheet-progress{display:flex;flex-direction:column;gap:6px;flex:1;}
+.progress-bar-bg{height:6px;border-radius:3px;background:var(--paper-dk);overflow:hidden;}
+.progress-bar-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .4s ease;}
+.progress-text{font-size:12px;color:var(--stone);}
 
-  /* ── Review table ── */
-  .review-header { display:flex; align-items:center; gap:14px; margin-bottom:24px; flex-wrap:wrap; }
-  .review-title { font-family:'Noto Serif JP',serif; font-size:22px; font-weight:700; color:var(--crimson-dk); }
-  .sub-table { width:100%; border-collapse:collapse; background:var(--white); border:2px solid var(--paper-dk); border-radius:12px; overflow:hidden; box-shadow:0 2px 8px var(--shadow); }
-  .sub-table th, .sub-table td { padding:12px 16px; text-align:left; border-bottom:1px solid var(--paper-dk); font-size:13px; }
-  .sub-table th { background:var(--paper-dk); font-weight:700; color:var(--stone); font-size:12px; text-transform:uppercase; letter-spacing:.05em; }
-  .sub-table tr:last-child td { border-bottom:none; }
-  .sub-table tr:hover td { background:rgba(155,27,48,.03); }
-  .answer-chip { font-family:'DM Mono',monospace; background:var(--paper-dk); padding:2px 8px; border-radius:4px; font-size:13px; color:var(--ink); margin-right:4px; display:inline-block; margin-bottom:2px; }
+/* Explanation box (shown after submit) */
+.explanation-box{background:var(--white);border:2px solid var(--gold);border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:14px;}
+.explanation-title{font-family:'Noto Serif JP',serif;font-size:18px;font-weight:700;color:var(--gold);display:flex;align-items:center;gap:8px;}
+.explanation-text{font-size:14px;line-height:1.9;color:var(--ink);white-space:pre-wrap;}
+.explanation-img{width:100%;border-radius:10px;border:1.5px solid var(--paper-dk);}
 
-  /* ── Code entry ── */
-  .code-entry { max-width:380px; margin:60px auto; text-align:center; display:flex; flex-direction:column; gap:20px; }
-  .code-title { font-family:'Noto Serif JP',serif; font-size:24px; font-weight:700; color:var(--crimson-dk); }
-  .code-input { width:100%; text-align:center; font-family:'DM Mono',monospace; font-size:28px; font-weight:500; letter-spacing:.25em; padding:16px; border:3px solid var(--paper-dk); border-radius:12px; background:var(--white); color:var(--crimson); outline:none; transition:border-color .15s; }
-  .code-input:focus { border-color:var(--crimson); }
+/* Review table */
+.review-header{display:flex;align-items:center;gap:14px;margin-bottom:24px;flex-wrap:wrap;}
+.review-title{font-family:'Noto Serif JP',serif;font-size:22px;font-weight:700;color:var(--crimson-dk);}
+.sub-table{width:100%;border-collapse:collapse;background:var(--white);border:2px solid var(--paper-dk);border-radius:12px;overflow:hidden;box-shadow:0 2px 8px var(--shadow);}
+.sub-table th,.sub-table td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--paper-dk);font-size:13px;}
+.sub-table th{background:var(--paper-dk);font-weight:700;color:var(--stone);font-size:12px;text-transform:uppercase;letter-spacing:.05em;}
+.sub-table tr:last-child td{border-bottom:none;}
+.sub-table tr:hover td{background:rgba(155,27,48,.03);}
+.answer-chip{font-family:'DM Mono',monospace;background:var(--paper-dk);padding:2px 8px;border-radius:4px;font-size:13px;color:var(--ink);margin-right:4px;display:inline-block;margin-bottom:2px;}
 
-  /* ── Modal ── */
-  .modal-overlay { position:fixed; inset:0; background:rgba(26,20,16,.55); display:flex; align-items:center; justify-content:center; z-index:200; padding:20px; }
-  .modal { background:var(--white); border-radius:16px; padding:28px; width:100%; max-width:440px; box-shadow:0 20px 60px rgba(0,0,0,.25); }
-  .modal-wide { max-width:600px; }
-  .modal-title { font-family:'Noto Serif JP',serif; font-size:18px; font-weight:700; color:var(--crimson-dk); margin-bottom:16px; }
-  .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+/* Scoring marks */
+.mark-btn{width:36px;height:36px;border-radius:8px;border:2px solid var(--paper-dk);background:var(--paper);font-size:16px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;font-family:sans-serif;}
+.mark-btn:hover{transform:scale(1.1);}
+.mark-btn.correct.active{background:#D1FAE5;border-color:#065F46;}
+.mark-btn.partial.active{background:#FEF3C7;border-color:#D97706;}
+.mark-btn.wrong.active{background:#FEE2E2;border-color:#DC2626;}
+.score-total{font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:var(--crimson);}
 
-  /* ── Toast ── */
-  .toast-container { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:300; display:flex; flex-direction:column; gap:8px; align-items:center; }
-  .toast { background:var(--ink); color:var(--white); padding:11px 20px; border-radius:30px; font-size:13px; font-weight:500; box-shadow:0 4px 20px rgba(0,0,0,.25); animation:toastIn .25s ease; display:flex; align-items:center; gap:8px; white-space:nowrap; }
-  .toast.success { background:#065F46; }
-  .toast.error   { background:var(--crimson-dk); }
-  @keyframes toastIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+/* Code entry */
+.code-entry{max-width:380px;margin:60px auto;text-align:center;display:flex;flex-direction:column;gap:20px;}
+.code-title{font-family:'Noto Serif JP',serif;font-size:24px;font-weight:700;color:var(--crimson-dk);}
+.code-input{width:100%;text-align:center;font-family:'DM Mono',monospace;font-size:28px;font-weight:500;letter-spacing:.25em;padding:16px;border:3px solid var(--paper-dk);border-radius:12px;background:var(--white);color:var(--crimson);outline:none;transition:border-color .15s;}
+.code-input:focus{border-color:var(--crimson);}
 
-  /* ── Done ── */
-  .done-page { text-align:center; padding:80px 24px; display:flex; flex-direction:column; align-items:center; gap:20px; }
-  .done-icon { font-size:64px; }
-  .done-title { font-family:'Noto Serif JP',serif; font-size:28px; font-weight:700; color:var(--crimson-dk); }
-  .done-sub { font-size:15px; color:var(--stone); line-height:1.8; max-width:360px; }
+/* Whiteboard */
+.wb-wrap{display:flex;flex-direction:column;gap:16px;}
+.wb-toolbar{background:var(--paper-dk);border:2px solid var(--stone-lt);border-radius:12px;padding:10px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.wb-canvas{width:100%;border:2px solid var(--paper-dk);border-radius:14px;background:var(--white);cursor:crosshair;display:block;touch-action:none;}
+.wb-tool-btn{width:34px;height:34px;border-radius:8px;border:2px solid var(--paper-dk);background:var(--white);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .15s;}
+.wb-tool-btn.active{border-color:var(--crimson);background:rgba(155,27,48,.08);}
+.wb-color-btn{width:24px;height:24px;border-radius:50%;border:3px solid transparent;cursor:pointer;transition:all .15s;}
+.wb-color-btn.active{border-color:var(--ink);}
+.wb-viewer{background:var(--white);border:2px solid var(--paper-dk);border-radius:14px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.live-badge{display:inline-flex;align-items:center;gap:6px;background:#7C3AED;color:white;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#EF4444;animation:pulse 1.2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
 
-  /* ── Upload ── */
-  .upload-zone { border:3px dashed var(--stone-lt); border-radius:12px; padding:36px; text-align:center; cursor:pointer; transition:all .2s; background:var(--paper); }
-  .upload-zone:hover, .upload-zone.drag-over { border-color:var(--crimson); background:rgba(155,27,48,.03); }
-  .upload-zone p { font-size:13px; color:var(--stone); margin-top:10px; line-height:1.7; }
-  .upload-zone .big { font-size:36px; }
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(26,20,16,.55);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
+.modal{background:var(--white);border-radius:16px;padding:28px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+.modal-wide{max-width:620px;}
+.modal-title{font-family:'Noto Serif JP',serif;font-size:18px;font-weight:700;color:var(--crimson-dk);margin-bottom:16px;}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;}
 
-  /* ── Spinner ── */
-  .spinner { display:inline-block; width:18px; height:18px; border:3px solid rgba(255,255,255,.4); border-top-color:white; border-radius:50%; animation:spin .7s linear infinite; flex-shrink:0; }
-  .spinner.dark { border-color:rgba(155,27,48,.2); border-top-color:var(--crimson); }
-  @keyframes spin { to{transform:rotate(360deg)} }
+/* Toast */
+.toast-container{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:300;display:flex;flex-direction:column;gap:8px;align-items:center;}
+.toast{background:var(--ink);color:var(--white);padding:11px 20px;border-radius:30px;font-size:13px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,.25);animation:toastIn .25s ease;display:flex;align-items:center;gap:8px;white-space:nowrap;}
+.toast.success{background:#065F46;}.toast.error{background:var(--crimson-dk);}
+@keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
-  /* ── Approval list ── */
-  .approval-item { background:var(--paper); border:1.5px solid var(--paper-dk); border-radius:10px; padding:14px 16px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-  .approval-item-info { flex:1; min-width:0; }
-  .approval-item-id { font-family:'DM Mono',monospace; font-size:15px; font-weight:700; color:var(--ink); }
-  .approval-item-meta { font-size:12px; color:var(--stone); margin-top:2px; }
-  .approval-votes { font-size:12px; color:var(--stone); }
-  .vote-count { font-family:'DM Mono',monospace; font-weight:700; color:var(--crimson); }
-  .teacher-list-item { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--paper); border:1.5px solid var(--paper-dk); border-radius:8px; }
-  .teacher-list-item-id { font-family:'DM Mono',monospace; font-size:14px; font-weight:700; color:var(--ink); flex:1; }
+/* Done page */
+.done-page{text-align:center;padding:40px 24px;display:flex;flex-direction:column;align-items:center;gap:20px;}
+.done-icon{font-size:64px;}
+.done-title{font-family:'Noto Serif JP',serif;font-size:28px;font-weight:700;color:var(--crimson-dk);}
+.done-sub{font-size:15px;color:var(--stone);line-height:1.8;max-width:360px;}
 
-  /* ── Config banner ── */
-  .config-banner { background:#FEF3C7; border:2px solid #F59E0B; border-radius:12px; padding:16px 20px; font-size:13px; color:#92400E; line-height:1.7; margin-bottom:20px; }
-  .config-banner strong { color:#78350F; }
-  .config-banner code { background:#FDE68A; padding:1px 6px; border-radius:4px; font-family:monospace; }
+/* Upload */
+.upload-zone{border:3px dashed var(--stone-lt);border-radius:12px;padding:36px;text-align:center;cursor:pointer;transition:all .2s;background:var(--paper);}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--crimson);background:rgba(155,27,48,.03);}
+.upload-zone p{font-size:13px;color:var(--stone);margin-top:10px;line-height:1.7;}
+.upload-zone .big{font-size:36px;}
 
-  /* ── Tab switcher (login/register) ── */
-  .tab-row { display:flex; gap:0; margin-bottom:24px; border:2px solid var(--paper-dk); border-radius:10px; overflow:hidden; }
-  .tab-btn { flex:1; padding:10px; background:var(--paper); color:var(--stone); font-size:13px; font-weight:700; border:none; cursor:pointer; transition:all .15s; font-family:'Noto Sans JP',sans-serif; }
-  .tab-btn.active { background:var(--crimson); color:var(--white); }
+/* Spinner */
+.spinner{display:inline-block;width:18px;height:18px;border:3px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+.spinner.dark{border-color:rgba(155,27,48,.2);border-top-color:var(--crimson);}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-  @media (max-width:600px) { .main{padding:20px 14px;} .form-box{padding:22px 18px;} .side-panel{padding:14px;} .sheet-submit-bar{flex-direction:column;align-items:stretch;} }
-  .divider { height:1px; background:var(--paper-dk); margin:16px 0; }
-  .text-muted { color:var(--stone); font-size:13px; }
-  .text-center { text-align:center; }
-  .flex-row { display:flex; align-items:center; gap:8px; }
-  .flex-between { display:flex; align-items:center; justify-content:space-between; }
-  .mt-8{margin-top:8px;} .mt-16{margin-top:16px;} .mt-24{margin-top:24px;} .gap-8{gap:8px;}
+/* Approval */
+.approval-item{background:var(--paper);border:1.5px solid var(--paper-dk);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.approval-item-info{flex:1;min-width:0;}
+.approval-item-id{font-family:'DM Mono',monospace;font-size:15px;font-weight:700;color:var(--ink);}
+.approval-item-meta{font-size:12px;color:var(--stone);margin-top:2px;}
+.approval-votes{font-size:12px;color:var(--stone);}
+.vote-count{font-family:'DM Mono',monospace;font-weight:700;color:var(--crimson);}
+.teacher-list-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--paper);border:1.5px solid var(--paper-dk);border-radius:8px;}
+.teacher-list-item-id{font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:var(--ink);flex:1;}
+
+/* Config banner */
+.config-banner{background:#FEF3C7;border:2px solid #F59E0B;border-radius:12px;padding:16px 20px;font-size:13px;color:#92400E;line-height:1.7;margin-bottom:20px;}
+.config-banner strong{color:#78350F;}
+.config-banner code{background:#FDE68A;padding:1px 6px;border-radius:4px;font-family:monospace;}
+
+/* Tab row (login/register) */
+.tab-row{display:flex;gap:0;margin-bottom:24px;border:2px solid var(--paper-dk);border-radius:10px;overflow:hidden;}
+.tab-btn{flex:1;padding:10px;background:var(--paper);color:var(--stone);font-size:13px;font-weight:700;border:none;cursor:pointer;transition:all .15s;font-family:'Noto Sans JP',sans-serif;}
+.tab-btn.active{background:var(--crimson);color:var(--white);}
+
+@media(max-width:600px){.main{padding:20px 14px;}.form-box{padding:22px 18px;}.side-panel{padding:14px;}.sheet-submit-bar{flex-direction:column;align-items:stretch;}}
+.divider{height:1px;background:var(--paper-dk);margin:16px 0;}
+.text-muted{color:var(--stone);font-size:13px;}.text-center{text-align:center;}
+.flex-row{display:flex;align-items:center;gap:8px;}.flex-between{display:flex;align-items:center;justify-content:space-between;}
+.mt-8{margin-top:8px;}.mt-16{margin-top:16px;}.mt-24{margin-top:24px;}.gap-8{gap:8px;}
 </style>
 </head>
 <body>
@@ -252,38 +264,38 @@
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback } = React;
 
-/* ══════════════════════════════════════════
+/* ══════════════════════════════════
    ★ SUPABASE 設定 ★
-══════════════════════════════════════════ */
+══════════════════════════════════ */
 const SUPABASE_URL  = 'https://ugtnpkvrlvlgyjcuwotb.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVndG5wa3ZybHZsZ3lqY3V3b3RiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1MzI4MTEsImV4cCI6MjA4ODEwODgxMX0.2EvzmxxmtX2lplCUWfmfqIXFyzrDGBGfnDSkNU2z93Y';
 
 const isConfigured = SUPABASE_URL !== 'YOUR_SUPABASE_URL';
 const supabase = isConfigured ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON) : null;
 
-/* ══════════════════════════════════════════
+/* ══════════════════════════════════
    DB API
-══════════════════════════════════════════ */
+══════════════════════════════════ */
 const DB = {
-  /* ── 教師 ── */
+  /* 教師 */
   async getTeachers() {
     if (!supabase) return [];
     const { data, error } = await supabase.from('teachers').select('*').order('created_at');
     if (error) throw error;
     return data || [];
   },
-  async findTeacher(teacherId) {
-    if (!supabase) return null;
-    const { data } = await supabase.from('teachers').select('*').eq('teacher_id', teacherId).eq('is_approved', true).maybeSingle();
-    return data || null;
-  },
   async verifyTeacher(teacherId, password) {
     if (!supabase) return null;
     const { data } = await supabase.from('teachers').select('*').eq('teacher_id', teacherId).eq('password_hash', password).eq('is_approved', true).maybeSingle();
     return data || null;
   },
+  async findTeacher(teacherId) {
+    if (!supabase) return null;
+    const { data } = await supabase.from('teachers').select('*').eq('teacher_id', teacherId).eq('is_approved', true).maybeSingle();
+    return data || null;
+  },
 
-  /* ── 教師申請 ── */
+  /* 教師申請 */
   async getApplications() {
     if (!supabase) return [];
     const { data, error } = await supabase.from('teacher_applications').select('*').order('applied_at', { ascending: false });
@@ -302,26 +314,13 @@ const DB = {
   },
   async vote(applicationId, teacherId, approve) {
     if (!supabase) throw new Error('Supabase未設定');
-    // upsert: 同じ教師が再投票した場合は上書き
-    const { error } = await supabase.from('application_votes').upsert([{
-      application_id: applicationId,
-      teacher_id: teacherId,
-      approve,
-      voted_at: new Date().toISOString(),
-    }], { onConflict: 'application_id,teacher_id' });
+    const { error } = await supabase.from('application_votes').upsert([{ application_id: applicationId, teacher_id: teacherId, approve, voted_at: new Date().toISOString() }], { onConflict: 'application_id,teacher_id' });
     if (error) throw error;
   },
   async approveApplication(applicationId, teacherIdToApprove, password) {
     if (!supabase) throw new Error('Supabase未設定');
-    // 教師テーブルへ追加
-    const { error: e1 } = await supabase.from('teachers').insert([{
-      teacher_id: teacherIdToApprove,
-      password_hash: password,
-      is_approved: true,
-      approved_at: new Date().toISOString(),
-    }]);
+    const { error: e1 } = await supabase.from('teachers').insert([{ teacher_id: teacherIdToApprove, password_hash: password, is_approved: true, approved_at: new Date().toISOString() }]);
     if (e1) throw e1;
-    // 申請を承認済みに
     const { error: e2 } = await supabase.from('teacher_applications').update({ status: 'approved' }).eq('id', applicationId);
     if (e2) throw e2;
   },
@@ -331,7 +330,7 @@ const DB = {
     if (error) throw error;
   },
 
-  /* ── 課題 ── */
+  /* 課題 */
   async getTasks() {
     if (!supabase) return [];
     const { data, error } = await supabase.from('tasks').select('*').order('created_at', { ascending: false });
@@ -361,7 +360,7 @@ const DB = {
     return data ? camelTask(data) : null;
   },
 
-  /* ── 提出 ── */
+  /* 提出 */
   async getSubmissions(taskId) {
     if (!supabase) return [];
     const { data, error } = await supabase.from('submissions').select('*').eq('task_id', taskId).order('submitted_at', { ascending: false });
@@ -379,35 +378,86 @@ const DB = {
     if (error) return 0;
     return count || 0;
   },
+
+  /* 採点 */
+  async getScoringConfig(taskId) {
+    if (!supabase) return {};
+    const { data } = await supabase.from('task_scoring_config').select('*').eq('task_id', taskId).maybeSingle();
+    return data ? data.field_points : {};
+  },
+  async saveScoringConfig(taskId, fieldPoints) {
+    if (!supabase) throw new Error('Supabase未設定');
+    const { error } = await supabase.from('task_scoring_config').upsert([{ task_id: taskId, field_points: fieldPoints }], { onConflict: 'task_id' });
+    if (error) throw error;
+  },
+  async getScorings(taskId) {
+    if (!supabase) return [];
+    const { data, error } = await supabase.from('scorings').select('*').eq('task_id', taskId);
+    if (error) throw error;
+    return data || [];
+  },
+  async saveScoring(taskId, submissionId, fieldId, mark) {
+    if (!supabase) throw new Error('Supabase未設定');
+    const { error } = await supabase.from('scorings').upsert([{ id: genId(), task_id: taskId, submission_id: submissionId, field_id: fieldId, mark, scored_at: new Date().toISOString() }], { onConflict: 'submission_id,field_id' });
+    if (error) throw error;
+  },
+
+  /* ホワイトボード */
+  async createWbSession(session) {
+    if (!supabase) throw new Error('Supabase未設定');
+    const { error } = await supabase.from('whiteboard_sessions').insert([session]);
+    if (error) throw error;
+  },
+  async findWbSession(accessCode) {
+    if (!supabase) return null;
+    const { data } = await supabase.from('whiteboard_sessions').select('*').eq('access_code', accessCode).eq('is_live', true).maybeSingle();
+    return data || null;
+  },
+  async endWbSession(id) {
+    if (!supabase) return;
+    await supabase.from('whiteboard_sessions').update({ is_live: false }).eq('id', id);
+  },
+  async clearWbStrokes(sessionId) {
+    if (!supabase) return;
+    await supabase.from('whiteboard_strokes').delete().eq('session_id', sessionId);
+  },
 };
 
-/* ── 変換 ── */
+/* 変換 */
 function camelTask(r) {
-  return { id:r.id, title:r.title, description:r.description, imageDataUrl:r.image_data_url, accessCode:r.access_code, createdBy:r.created_by, createdAt:r.created_at, isPublished:r.is_published, answerFields:r.answer_fields||[] };
+  return {
+    id:r.id, title:r.title, description:r.description,
+    imageDataUrl:r.image_data_url, accessCode:r.access_code,
+    createdBy:r.created_by, createdAt:r.created_at,
+    isPublished:r.is_published, answerFields:r.answer_fields||[],
+    explanationText:r.explanation_text||'',
+    explanationImageUrl:r.explanation_image_url||null,
+  };
 }
 function snakeTask(t) {
   const o = {};
-  if (t.id!==undefined)           o.id=t.id;
-  if (t.title!==undefined)        o.title=t.title;
-  if (t.description!==undefined)  o.description=t.description;
-  if (t.imageDataUrl!==undefined) o.image_data_url=t.imageDataUrl;
-  if (t.accessCode!==undefined)   o.access_code=t.accessCode;
-  if (t.createdBy!==undefined)    o.created_by=t.createdBy;
-  if (t.isPublished!==undefined)  o.is_published=t.isPublished;
-  if (t.answerFields!==undefined) o.answer_fields=t.answerFields;
+  if (t.id!==undefined)                o.id=t.id;
+  if (t.title!==undefined)             o.title=t.title;
+  if (t.description!==undefined)       o.description=t.description;
+  if (t.imageDataUrl!==undefined)      o.image_data_url=t.imageDataUrl;
+  if (t.accessCode!==undefined)        o.access_code=t.accessCode;
+  if (t.createdBy!==undefined)         o.created_by=t.createdBy;
+  if (t.isPublished!==undefined)       o.is_published=t.isPublished;
+  if (t.answerFields!==undefined)      o.answer_fields=t.answerFields;
+  if (t.explanationText!==undefined)   o.explanation_text=t.explanationText;
+  if (t.explanationImageUrl!==undefined) o.explanation_image_url=t.explanationImageUrl;
   return o;
 }
 function camelSub(r) { return { id:r.id, taskId:r.task_id, nickname:r.nickname, answers:r.answers||{}, submittedAt:r.submitted_at }; }
 function snakeSub(s) { return { id:s.id, task_id:s.taskId, nickname:s.nickname, answers:s.answers, submitted_at:s.submittedAt }; }
 
-/* ── Utils ── */
+/* Utils */
 let _uid = 1;
 function genId() { return 'id_'+(_uid++)+'_'+Date.now(); }
 function genCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  return Array.from({length:6},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+  const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join('');
 }
-
 function useToast() {
   const [toasts, setToasts] = useState([]);
   const show = useCallback((msg, type='default') => {
@@ -418,9 +468,9 @@ function useToast() {
   return { toasts, show };
 }
 
-/* ══════════════════════════════════════════
+/* ══════════════════════════════════
    共通コンポーネント
-══════════════════════════════════════════ */
+══════════════════════════════════ */
 function Kamon({ size=80, color='#9B1B30' }) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100">
@@ -431,14 +481,10 @@ function Kamon({ size=80, color='#9B1B30' }) {
     </svg>
   );
 }
-
 function Header({ role, onRoleChange, onHome }) {
   return (
     <header className="header">
-      <div className="header-logo" onClick={onHome}>
-        <div className="moon"/>
-        <span>紅月計算塾</span>
-      </div>
+      <div className="header-logo" onClick={onHome}><div className="moon"/><span>紅月計算塾</span></div>
       <nav className="header-nav">
         <button className={`nav-btn ${role==='teacher'?'active':''}`} onClick={()=>onRoleChange('teacher')}>教える側</button>
         <button className={`nav-btn ${role==='student'?'active':''}`} onClick={()=>onRoleChange('student')}>生徒</button>
@@ -446,7 +492,6 @@ function Header({ role, onRoleChange, onHome }) {
     </header>
   );
 }
-
 function Toasts({ toasts }) {
   if (!toasts.length) return null;
   return (
@@ -459,23 +504,20 @@ function Toasts({ toasts }) {
     </div>
   );
 }
-
 function ConfigBanner() {
   if (isConfigured) return null;
   return (
     <div className="config-banner">
-      ⚠️ <strong>Supabase未設定：</strong>
-      HTMLファイル上部の <code>SUPABASE_URL</code> と <code>SUPABASE_ANON</code> を書き換えてください。
+      ⚠️ <strong>Supabase未設定：</strong> <code>SUPABASE_URL</code> と <code>SUPABASE_ANON</code> を書き換えてください。
     </div>
   );
 }
 
-/* ══════════════════════════════════════════
-   教師登録・ログイン
-══════════════════════════════════════════ */
+/* ══════════════════════════════════
+   教師認証
+══════════════════════════════════ */
 function TeacherAuth({ onLogin, toast }) {
-  const [tab, setTab] = useState('login'); // 'login' | 'register'
-
+  const [tab, setTab] = useState('login');
   return (
     <div className="main" style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'calc(100vh - 58px)'}}>
       <div className="form-box" style={{maxWidth:460}}>
@@ -485,154 +527,110 @@ function TeacherAuth({ onLogin, toast }) {
           <button className={`tab-btn ${tab==='login'?'active':''}`} onClick={()=>setTab('login')}>ログイン</button>
           <button className={`tab-btn ${tab==='register'?'active':''}`} onClick={()=>setTab('register')}>新規登録申請</button>
         </div>
-        {tab==='login'
-          ? <TeacherLogin onLogin={onLogin} toast={toast}/>
-          : <TeacherRegister onDone={()=>setTab('login')} toast={toast}/>
-        }
+        {tab==='login' ? <TeacherLogin onLogin={onLogin} toast={toast}/> : <TeacherRegister onDone={()=>setTab('login')} toast={toast}/>}
       </div>
     </div>
   );
 }
-
 function TeacherLogin({ onLogin, toast }) {
-  const [tid,  setTid]  = useState('');
-  const [pass, setPass] = useState('');
-  const [err,  setErr]  = useState('');
-  const [loading, setLoading] = useState(false);
-
+  const [tid,setTid]=useState(''); const [pass,setPass]=useState(''); const [err,setErr]=useState(''); const [loading,setLoading]=useState(false);
   const handle = async () => {
-    if (!tid.trim()||!pass) { setErr('教師IDとパスワードを入力してください'); return; }
+    if (!tid.trim()||!pass){setErr('教師IDとパスワードを入力してください');return;}
     setLoading(true); setErr('');
     try {
       const teacher = await DB.verifyTeacher(tid.trim(), pass);
-      if (!teacher) { setErr('IDまたはパスワードが違います。承認済みかご確認ください。'); return; }
-      onLogin({ uid: teacher.id, teacherId: teacher.teacher_id, displayName: teacher.teacher_id });
-    } catch(e) {
-      setErr('エラーが発生しました: '+e.message);
-    } finally { setLoading(false); }
+      if (!teacher){setErr('IDまたはパスワードが違います');return;}
+      onLogin({ uid:teacher.id, teacherId:teacher.teacher_id, displayName:teacher.teacher_id });
+    } catch(e){setErr('エラー: '+e.message);}
+    finally{setLoading(false);}
   };
-
   return (
     <>
-      <div className="form-group">
-        <label className="form-label">教師ID</label>
-        <input className="form-input" placeholder="例: tanaka_sensei" value={tid}
-          onChange={e=>{setTid(e.target.value);setErr('');}}
-          onKeyDown={e=>e.key==='Enter'&&handle()}/>
-      </div>
-      <div className="form-group">
-        <label className="form-label">パスワード</label>
-        <input className="form-input" type="password" placeholder="••••••••" value={pass}
-          onChange={e=>{setPass(e.target.value);setErr('');}}
-          onKeyDown={e=>e.key==='Enter'&&handle()}/>
-      </div>
-      {err && <div style={{color:'var(--crimson)',fontSize:13,marginBottom:12}}>{err}</div>}
-      <button className="btn btn-primary btn-full btn-lg" onClick={handle} disabled={loading}>
-        {loading ? <><span className="spinner"/> ログイン中…</> : 'ログイン'}
-      </button>
+      <div className="form-group"><label className="form-label">教師ID</label><input className="form-input" placeholder="例: tanaka_sensei" value={tid} onChange={e=>{setTid(e.target.value);setErr('');}} onKeyDown={e=>e.key==='Enter'&&handle()}/></div>
+      <div className="form-group"><label className="form-label">パスワード</label><input className="form-input" type="password" value={pass} onChange={e=>{setPass(e.target.value);setErr('');}} onKeyDown={e=>e.key==='Enter'&&handle()}/></div>
+      {err&&<div style={{color:'var(--crimson)',fontSize:13,marginBottom:12}}>{err}</div>}
+      <button className="btn btn-primary btn-full btn-lg" onClick={handle} disabled={loading}>{loading?<><span className="spinner"/> ログイン中…</>:'ログイン'}</button>
     </>
   );
 }
-
 function TeacherRegister({ onDone, toast }) {
-  const [tid,   setTid]   = useState('');
-  const [pass,  setPass]  = useState('');
-  const [pass2, setPass2] = useState('');
-  const [err,   setErr]   = useState('');
-  const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
-
+  const [tid,setTid]=useState(''); const [pass,setPass]=useState(''); const [pass2,setPass2]=useState(''); const [err,setErr]=useState(''); const [loading,setLoading]=useState(false); const [done,setDone]=useState(false);
   const handle = async () => {
-    if (!tid.trim()) { setErr('教師IDを入力してください'); return; }
-    if (pass.length < 6) { setErr('パスワードは6文字以上で設定してください'); return; }
-    if (pass !== pass2) { setErr('パスワードが一致しません'); return; }
+    if (!tid.trim()){setErr('教師IDを入力してください');return;}
+    if (pass.length<6){setErr('パスワードは6文字以上');return;}
+    if (pass!==pass2){setErr('パスワードが一致しません');return;}
     setLoading(true); setErr('');
     try {
-      // 同じIDの申請・教師が既にあるか確認
       const existing = await DB.findTeacher(tid.trim());
-      if (existing) { setErr('このIDは既に登録されています'); setLoading(false); return; }
-
-      await DB.createApplication({
-        id: genId(),
-        teacher_id: tid.trim(),
-        password_hash: pass,
-        status: 'pending',
-        applied_at: new Date().toISOString(),
-      });
-      setDone(true);
-      toast.show('申請を送信しました', 'success');
-    } catch(e) {
-      setErr('エラーが発生しました: '+e.message);
-    } finally { setLoading(false); }
+      if (existing){setErr('このIDは既に登録されています');setLoading(false);return;}
+      await DB.createApplication({ id:genId(), teacher_id:tid.trim(), password_hash:pass, status:'pending', applied_at:new Date().toISOString() });
+      setDone(true); toast.show('申請を送信しました','success');
+    } catch(e){setErr('エラー: '+e.message);}
+    finally{setLoading(false);}
   };
-
   if (done) return (
     <div style={{textAlign:'center',padding:'20px 0'}}>
       <div style={{fontSize:48,marginBottom:12}}>📬</div>
       <div style={{fontFamily:'Noto Serif JP',fontSize:17,fontWeight:700,color:'var(--crimson-dk)',marginBottom:8}}>申請を送信しました</div>
-      <div style={{fontSize:13,color:'var(--stone)',lineHeight:1.8,marginBottom:20}}>
-        既存の教師全員の承認が得られると、<br/>ログインできるようになります。<br/>（教師が誰もいない場合は即時承認されます）
-      </div>
+      <div style={{fontSize:13,color:'var(--stone)',lineHeight:1.8,marginBottom:20}}>既存の教師全員の承認後にログインできます。<br/>（教師がいない場合は即時承認）</div>
       <button className="btn btn-ghost btn-full" onClick={onDone}>ログイン画面へ</button>
     </div>
   );
-
   return (
     <>
-      <div className="form-group">
-        <label className="form-label">教師ID <span style={{color:'var(--crimson)'}}>*</span></label>
-        <input className="form-input" placeholder="例: tanaka_sensei" value={tid}
-          onChange={e=>{setTid(e.target.value);setErr('');}} maxLength={30}/>
-        <div className="form-hint">半角英数字・アンダースコア使用可</div>
-      </div>
-      <div className="form-group">
-        <label className="form-label">パスワード <span style={{color:'var(--crimson)'}}>*</span></label>
-        <input className="form-input" type="password" placeholder="6文字以上" value={pass}
-          onChange={e=>{setPass(e.target.value);setErr('');}}/>
-      </div>
-      <div className="form-group">
-        <label className="form-label">パスワード（確認）</label>
-        <input className="form-input" type="password" placeholder="もう一度入力" value={pass2}
-          onChange={e=>{setPass2(e.target.value);setErr('');}}/>
-      </div>
-      {err && <div style={{color:'var(--crimson)',fontSize:13,marginBottom:12}}>{err}</div>}
-      <button className="btn btn-primary btn-full btn-lg" onClick={handle} disabled={loading}>
-        {loading ? <><span className="spinner"/> 申請中…</> : '登録申請する'}
-      </button>
-      <div className="text-muted text-center mt-16" style={{fontSize:12}}>
-        ※ 既存の教師全員の承認後にログイン可能になります
-      </div>
+      <div className="form-group"><label className="form-label">教師ID <span style={{color:'var(--crimson)'}}>*</span></label><input className="form-input" placeholder="例: tanaka_sensei" value={tid} onChange={e=>{setTid(e.target.value);setErr('');}} maxLength={30}/><div className="form-hint">半角英数字・アンダースコア使用可</div></div>
+      <div className="form-group"><label className="form-label">パスワード <span style={{color:'var(--crimson)'}}>*</span></label><input className="form-input" type="password" placeholder="6文字以上" value={pass} onChange={e=>{setPass(e.target.value);setErr('');}}/></div>
+      <div className="form-group"><label className="form-label">パスワード（確認）</label><input className="form-input" type="password" value={pass2} onChange={e=>{setPass2(e.target.value);setErr('');}}/></div>
+      {err&&<div style={{color:'var(--crimson)',fontSize:13,marginBottom:12}}>{err}</div>}
+      <button className="btn btn-primary btn-full btn-lg" onClick={handle} disabled={loading}>{loading?<><span className="spinner"/> 申請中…</>:'登録申請する'}</button>
     </>
   );
 }
 
-/* ══════════════════════════════════════════
-   教師ダッシュボード
-══════════════════════════════════════════ */
+/* ══════════════════════════════════
+   教師ダッシュボード（タブ付き）
+══════════════════════════════════ */
 function TeacherDashboard({ teacher, onCreate, onReview, toast, onLogout }) {
-  const [tasks,      setTasks]      = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [subCounts,  setSubCounts]  = useState({});
-  const [filter,     setFilter]     = useState('all'); // 'all' | 'published' | 'draft'
-  const [showApprovals, setShowApprovals] = useState(false);
-  const [applications,  setApplications]  = useState([]);
-  const [appVotes,      setAppVotes]      = useState({});
-  const [teachers,      setTeachers]      = useState([]);
-  const [appLoading,    setAppLoading]    = useState(false);
+  const [activeTab, setActiveTab] = useState('tasks'); // tasks | scoring | whiteboard
+
+  return (
+    <div className="main">
+      <ConfigBanner/>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20,flexWrap:'wrap',gap:10}}>
+        <div style={{fontFamily:'Noto Serif JP',fontSize:20,fontWeight:700,color:'var(--crimson-dk)'}}>
+          👤 {teacher.teacherId}
+        </div>
+        <button className="btn btn-ghost btn-sm" style={{color:'var(--crimson)'}} onClick={onLogout}>ログアウト</button>
+      </div>
+
+      <div className="dash-tabs">
+        <button className={`dash-tab ${activeTab==='tasks'?'active':''}`} onClick={()=>setActiveTab('tasks')}>📋 課題管理</button>
+        <button className={`dash-tab ${activeTab==='scoring'?'active':''}`} onClick={()=>setActiveTab('scoring')}>📝 採点</button>
+        <button className={`dash-tab ${activeTab==='whiteboard'?'active':''}`} onClick={()=>setActiveTab('whiteboard')}>🖊 ホワイトボード</button>
+      </div>
+
+      {activeTab==='tasks'    && <TasksTab teacher={teacher} onCreate={onCreate} onReview={onReview} toast={toast}/>}
+      {activeTab==='scoring'  && <ScoringTab teacher={teacher} toast={toast}/>}
+      {activeTab==='whiteboard' && <WhiteboardTab teacher={teacher} toast={toast}/>}
+    </div>
+  );
+}
+
+/* ── 課題管理タブ ── */
+function TasksTab({ teacher, onCreate, onReview, toast }) {
+  const [tasks,setTasks]=useState([]); const [loading,setLoading]=useState(true); const [subCounts,setSubCounts]=useState({}); const [filter,setFilter]=useState('all'); const [showApprovals,setShowApprovals]=useState(false); const [applications,setApplications]=useState([]); const [appVotes,setAppVotes]=useState({}); const [teachers,setTeachers]=useState([]); const [appLoading,setAppLoading]=useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const ts = await DB.getTasks();
-      setTasks(ts);
+      const ts = await DB.getTasks(); setTasks(ts);
       const counts = {};
-      await Promise.all(ts.map(async t => { counts[t.id] = await DB.countSubmissions(t.id); }));
+      await Promise.all(ts.map(async t=>{ counts[t.id]=await DB.countSubmissions(t.id); }));
       setSubCounts(counts);
-    } catch(e) { toast.show('データの取得に失敗しました: '+e.message, 'error'); }
-    finally { setLoading(false); }
-  }, []);
-
-  useEffect(()=>{ load(); }, [load]);
+    } catch(e){toast.show('データ取得エラー: '+e.message,'error');}
+    finally{setLoading(false);}
+  },[]);
+  useEffect(()=>{load();},[load]);
 
   const loadApprovals = async () => {
     setAppLoading(true);
@@ -641,149 +639,94 @@ function TeacherDashboard({ teacher, onCreate, onReview, toast, onLogout }) {
       const pending = apps.filter(a=>a.status==='pending');
       setApplications(pending);
       const votes = {};
-      await Promise.all(pending.map(async a => { votes[a.id] = await DB.getVotes(a.id); }));
+      await Promise.all(pending.map(async a=>{votes[a.id]=await DB.getVotes(a.id);}));
       setAppVotes(votes);
-      const ts = await DB.getTeachers();
-      setTeachers(ts);
-    } catch(e) { toast.show('取得エラー: '+e.message, 'error'); }
-    finally { setAppLoading(false); }
-  };
-
-  const handleShowApprovals = () => {
-    setShowApprovals(true);
-    loadApprovals();
+      setTeachers(await DB.getTeachers());
+    } catch(e){toast.show('取得エラー: '+e.message,'error');}
+    finally{setAppLoading(false);}
   };
 
   const handleVote = async (app, approve) => {
     try {
       await DB.vote(app.id, teacher.teacherId, approve);
-      // 投票後、承認条件チェック：全教師が承認済みかどうか
       const updatedVotes = await DB.getVotes(app.id);
-      const allTeachers = await DB.getTeachers();
-      const approveVotes = updatedVotes.filter(v=>v.approve);
-      const rejectVotes  = updatedVotes.filter(v=>!v.approve);
-
-      if (rejectVotes.length > 0) {
-        // 1人でも否決 → 却下
+      const allTeachers  = await DB.getTeachers();
+      if (updatedVotes.some(v=>!v.approve)) {
         await DB.rejectApplication(app.id);
         toast.show(`${app.teacher_id} の申請を却下しました`);
-        loadApprovals();
-      } else if (approveVotes.length >= allTeachers.length && allTeachers.length > 0) {
-        // 全員承認 → 教師追加
+      } else if (updatedVotes.filter(v=>v.approve).length >= allTeachers.length && allTeachers.length>0) {
         await DB.approveApplication(app.id, app.teacher_id, app.password_hash);
-        toast.show(`${app.teacher_id} を教師として承認しました！`, 'success');
-        loadApprovals();
+        toast.show(`${app.teacher_id} を教師として承認しました！`,'success');
       } else {
-        toast.show(approve ? '承認票を入れました' : '否決票を入れました', approve?'success':'default');
-        loadApprovals();
+        toast.show(approve?'承認票を入れました':'否決票を入れました', approve?'success':'default');
       }
-    } catch(e) { toast.show('エラー: '+e.message, 'error'); }
+      loadApprovals();
+    } catch(e){toast.show('エラー: '+e.message,'error');}
   };
 
   const togglePublish = async (task) => {
     try {
-      await DB.updateTask(task.id, { isPublished: !task.isPublished });
-      toast.show(task.isPublished ? '課題を非公開にしました' : '課題を公開しました', task.isPublished?'default':'success');
+      await DB.updateTask(task.id, {isPublished:!task.isPublished});
+      toast.show(task.isPublished?'非公開にしました':'公開しました', task.isPublished?'default':'success');
       load();
-    } catch(e) { toast.show('更新に失敗しました', 'error'); }
+    } catch(e){toast.show('更新エラー','error');}
   };
-
   const deleteTask = async (task) => {
     if (!window.confirm(`「${task.title}」を削除しますか？`)) return;
-    try {
-      await DB.deleteTask(task.id);
-      toast.show('課題を削除しました');
-      load();
-    } catch(e) { toast.show('削除に失敗しました', 'error'); }
+    try { await DB.deleteTask(task.id); toast.show('削除しました'); load(); } catch(e){toast.show('削除エラー','error');}
   };
-
-  const copyCode = (code) => {
-    navigator.clipboard?.writeText(code).catch(()=>{});
-    toast.show('コードをコピーしました ✓', 'success');
-  };
+  const copyCode = (code) => { navigator.clipboard?.writeText(code).catch(()=>{}); toast.show('コードをコピーしました','success'); };
 
   const totalSubs = Object.values(subCounts).reduce((a,b)=>a+b,0);
-  const filteredTasks = tasks.filter(t => {
-    if (filter==='published') return t.isPublished;
-    if (filter==='draft')     return !t.isPublished;
-    return true;
-  });
+  const filtered = tasks.filter(t=>filter==='published'?t.isPublished:filter==='draft'?!t.isPublished:true);
 
   return (
-    <div className="main">
-      <ConfigBanner/>
+    <>
       <div className="stat-row">
-        <div className="stat-box"><div className="stat-num">{tasks.length}</div><div className="stat-label">作成済み課題</div></div>
+        <div className="stat-box"><div className="stat-num">{tasks.length}</div><div className="stat-label">課題数</div></div>
         <div className="stat-box"><div className="stat-num">{tasks.filter(t=>t.isPublished).length}</div><div className="stat-label">公開中</div></div>
         <div className="stat-box"><div className="stat-num">{tasks.filter(t=>!t.isPublished).length}</div><div className="stat-label">非公開</div></div>
         <div className="stat-box"><div className="stat-num">{totalSubs}</div><div className="stat-label">提出件数</div></div>
       </div>
-
       <div className="dashboard-header">
         <div className="dashboard-title">課題一覧</div>
         <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-          <button className="btn btn-ghost btn-sm" onClick={handleShowApprovals}>
-            👥 教師管理
-          </button>
-          <button className="btn btn-ghost btn-sm" onClick={load} disabled={loading}>
-            {loading ? <span className="spinner dark"/> : '↻'} 更新
-          </button>
-          <button className="btn btn-primary" onClick={onCreate}>＋ 新しい課題を作成</button>
-          <button className="btn btn-ghost btn-sm" style={{color:'var(--crimson)'}} onClick={onLogout}>ログアウト</button>
+          <button className="btn btn-ghost btn-sm" onClick={()=>{setShowApprovals(true);loadApprovals();}}>👥 教師管理</button>
+          <button className="btn btn-ghost btn-sm" onClick={load} disabled={loading}>{loading?<span className="spinner dark"/>:'↻'} 更新</button>
+          <button className="btn btn-primary" onClick={onCreate}>＋ 新しい課題</button>
         </div>
       </div>
-
-      {/* フィルタータブ */}
       <div className="filter-tabs">
-        <button className={`filter-tab ${filter==='all'?'active':''}`} onClick={()=>setFilter('all')}>
-          すべて <span style={{marginLeft:4,opacity:.7}}>({tasks.length})</span>
-        </button>
-        <button className={`filter-tab ${filter==='published'?'active':''}`} onClick={()=>setFilter('published')}>
-          🟢 公開中 <span style={{marginLeft:4,opacity:.7}}>({tasks.filter(t=>t.isPublished).length})</span>
-        </button>
-        <button className={`filter-tab ${filter==='draft'?'active':''}`} onClick={()=>setFilter('draft')}>
-          ⬜ 非公開 <span style={{marginLeft:4,opacity:.7}}>({tasks.filter(t=>!t.isPublished).length})</span>
-        </button>
+        <button className={`filter-tab ${filter==='all'?'active':''}`} onClick={()=>setFilter('all')}>すべて ({tasks.length})</button>
+        <button className={`filter-tab ${filter==='published'?'active':''}`} onClick={()=>setFilter('published')}>🟢 公開中 ({tasks.filter(t=>t.isPublished).length})</button>
+        <button className={`filter-tab ${filter==='draft'?'active':''}`} onClick={()=>setFilter('draft')}>⬜ 非公開 ({tasks.filter(t=>!t.isPublished).length})</button>
       </div>
-
       {loading ? (
-        <div style={{textAlign:'center',padding:'60px 0',color:'var(--stone)'}}>
-          <span className="spinner dark" style={{width:32,height:32,borderWidth:4}}/>
-          <div style={{marginTop:12,fontSize:14}}>読み込み中…</div>
-        </div>
-      ) : filteredTasks.length===0 ? (
+        <div style={{textAlign:'center',padding:'60px 0'}}><span className="spinner dark" style={{width:32,height:32,borderWidth:4}}/></div>
+      ) : filtered.length===0 ? (
         <div style={{textAlign:'center',padding:'60px 0',color:'var(--stone)'}}>
           <div style={{fontSize:48,marginBottom:12}}>📋</div>
-          <div style={{fontSize:15}}>
-            {filter==='all' ? 'まだ課題がありません' : filter==='published' ? '公開中の課題はありません' : '非公開の課題はありません'}
-          </div>
-          {filter==='all' && <div style={{fontSize:13,marginTop:6}}>「新しい課題を作成」から始めましょう</div>}
+          <div>{filter==='all'?'まだ課題がありません':filter==='published'?'公開中の課題はありません':'非公開の課題はありません'}</div>
         </div>
       ) : (
         <div className="task-grid">
-          {filteredTasks.map(task=>(
+          {filtered.map(task=>(
             <div key={task.id} className="task-card">
               <div className="task-card-top">
                 <div className="task-card-title">{task.title}</div>
-                <span className={`badge ${task.isPublished?'badge-published':'badge-draft'}`}>
-                  {task.isPublished ? '公開中' : '非公開'}
-                </span>
+                <span className={`badge ${task.isPublished?'badge-published':'badge-draft'}`}>{task.isPublished?'公開中':'非公開'}</span>
               </div>
-              {task.description && <div className="task-card-meta">{task.description}</div>}
+              {task.description&&<div className="task-card-meta">{task.description}</div>}
               <div>
                 <div className="text-muted" style={{fontSize:11,marginBottom:4}}>アクセスコード</div>
                 <div className="task-card-code" style={{cursor:'pointer'}} onClick={()=>copyCode(task.accessCode)}>
-                  {task.accessCode}
-                  <span style={{fontSize:11,marginLeft:8,opacity:.6}}>📋</span>
+                  {task.accessCode} <span style={{fontSize:11,marginLeft:8,opacity:.6}}>📋</span>
                 </div>
               </div>
-              <div className="task-card-meta">
-                回答欄 {(task.answerFields||[]).length} 個　・　提出 {subCounts[task.id]||0} 件
-              </div>
+              {(task.explanationText||task.explanationImageUrl)&&<div style={{fontSize:11,color:'var(--gold)',fontWeight:700}}>💡 解説あり</div>}
+              <div className="task-card-meta">回答欄 {(task.answerFields||[]).length} 個 ・ 提出 {subCounts[task.id]||0} 件</div>
               <div className="task-card-actions">
-                <button className="btn btn-sm btn-secondary" onClick={()=>togglePublish(task)}>
-                  {task.isPublished ? '非公開にする' : '公開する'}
-                </button>
+                <button className="btn btn-sm btn-secondary" onClick={()=>togglePublish(task)}>{task.isPublished?'非公開にする':'公開する'}</button>
                 <button className="btn btn-sm btn-ghost" onClick={()=>onReview(task)}>回答確認</button>
                 <button className="btn btn-sm btn-ghost" style={{color:'var(--crimson)'}} onClick={()=>deleteTask(task)}>削除</button>
               </div>
@@ -793,72 +736,41 @@ function TeacherDashboard({ teacher, onCreate, onReview, toast, onLogout }) {
       )}
 
       {/* 教師管理モーダル */}
-      {showApprovals && (
+      {showApprovals&&(
         <div className="modal-overlay" onClick={()=>setShowApprovals(false)}>
           <div className="modal modal-wide" onClick={e=>e.stopPropagation()} style={{maxHeight:'85vh',overflowY:'auto'}}>
             <div className="modal-title">👥 教師管理</div>
-            {appLoading ? (
-              <div style={{textAlign:'center',padding:'40px 0'}}>
-                <span className="spinner dark" style={{width:28,height:28,borderWidth:3}}/>
-              </div>
-            ) : (
+            {appLoading?(<div style={{textAlign:'center',padding:'40px 0'}}><span className="spinner dark" style={{width:28,height:28,borderWidth:3}}/></div>):(
               <>
-                {/* 承認待ち申請 */}
-                <div style={{fontWeight:700,fontSize:14,color:'var(--crimson-dk)',marginBottom:10}}>
-                  承認待ちの申請 ({applications.length}件)
-                </div>
-                {applications.length===0 ? (
-                  <div style={{fontSize:13,color:'var(--stone)',marginBottom:20,padding:'12px',background:'var(--paper)',borderRadius:8}}>
-                    現在承認待ちの申請はありません
-                  </div>
-                ) : (
+                <div style={{fontWeight:700,fontSize:14,color:'var(--crimson-dk)',marginBottom:10}}>承認待ちの申請 ({applications.length}件)</div>
+                {applications.length===0?(
+                  <div style={{fontSize:13,color:'var(--stone)',marginBottom:20,padding:'12px',background:'var(--paper)',borderRadius:8}}>承認待ちの申請はありません</div>
+                ):(
                   <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:20}}>
                     {applications.map(app=>{
-                      const votes = appVotes[app.id] || [];
-                      const myVote = votes.find(v=>v.teacher_id===teacher.teacherId);
-                      const approveCount = votes.filter(v=>v.approve).length;
+                      const votes=appVotes[app.id]||[];
+                      const myVote=votes.find(v=>v.teacher_id===teacher.teacherId);
                       return (
                         <div key={app.id} className="approval-item">
                           <div className="approval-item-info">
                             <div className="approval-item-id">🆔 {app.teacher_id}</div>
-                            <div className="approval-item-meta">
-                              申請日時: {app.applied_at?.slice(0,16).replace('T',' ')}
-                            </div>
-                            <div className="approval-votes" style={{marginTop:4}}>
-                              承認票: <span className="vote-count">{approveCount}</span> / {teachers.length} 人
-                              {myVote && (
-                                <span style={{marginLeft:8,fontSize:11,color:myVote.approve?'#065F46':'#991B1B',fontWeight:700}}>
-                                  {myVote.approve ? '✓ あなたは承認済み' : '✕ あなたは否決済み'}
-                                </span>
-                              )}
-                            </div>
+                            <div className="approval-item-meta">申請日時: {app.applied_at?.slice(0,16).replace('T',' ')}</div>
+                            <div className="approval-votes">承認票: <span className="vote-count">{votes.filter(v=>v.approve).length}</span>/{teachers.length}人{myVote&&<span style={{marginLeft:8,fontSize:11,color:myVote.approve?'#065F46':'#991B1B',fontWeight:700}}>{myVote.approve?'✓承認済み':'✕否決済み'}</span>}</div>
                           </div>
-                          {!myVote && (
-                            <div style={{display:'flex',gap:6}}>
-                              <button className="btn btn-sm btn-approve" onClick={()=>handleVote(app,true)}>✓ 承認</button>
-                              <button className="btn btn-sm btn-reject"  onClick={()=>handleVote(app,false)}>✕ 否決</button>
-                            </div>
-                          )}
+                          {!myVote&&<div style={{display:'flex',gap:6}}><button className="btn btn-sm btn-approve" onClick={()=>handleVote(app,true)}>✓ 承認</button><button className="btn btn-sm btn-reject" onClick={()=>handleVote(app,false)}>✕ 否決</button></div>}
                         </div>
                       );
                     })}
                   </div>
                 )}
-
                 <div className="divider"/>
-
-                {/* 承認済み教師一覧 */}
-                <div style={{fontWeight:700,fontSize:14,color:'var(--crimson-dk)',marginBottom:10}}>
-                  承認済み教師一覧 ({teachers.filter(t=>t.is_approved).length}人)
-                </div>
+                <div style={{fontWeight:700,fontSize:14,color:'var(--crimson-dk)',marginBottom:10}}>承認済み教師 ({teachers.filter(t=>t.is_approved).length}人)</div>
                 <div style={{display:'flex',flexDirection:'column',gap:8}}>
                   {teachers.filter(t=>t.is_approved).map(t=>(
                     <div key={t.id} className="teacher-list-item">
                       <span style={{fontSize:18}}>👤</span>
                       <span className="teacher-list-item-id">{t.teacher_id}</span>
-                      <span style={{fontSize:11,color:'var(--stone)'}}>
-                        {t.teacher_id===teacher.teacherId ? '（あなた）' : ''}
-                      </span>
+                      {t.teacher_id===teacher.teacherId&&<span style={{fontSize:11,color:'var(--stone)'}}>（あなた）</span>}
                     </div>
                   ))}
                 </div>
@@ -871,106 +783,432 @@ function TeacherDashboard({ teacher, onCreate, onReview, toast, onLogout }) {
           </div>
         </div>
       )}
+    </>
+  );
+}
+
+/* ── 採点タブ ── */
+function ScoringTab({ teacher, toast }) {
+  const [tasks,setTasks]=useState([]); const [selTask,setSelTask]=useState(null); const [subs,setSubs]=useState([]); const [scorings,setScorings]=useState([]); const [config,setConfig]=useState({}); const [loading,setLoading]=useState(false); const [saving,setSaving]=useState(false);
+
+  useEffect(()=>{
+    DB.getTasks().then(setTasks).catch(e=>toast.show('取得エラー','error'));
+  },[]);
+
+  const selectTask = async (task) => {
+    setSelTask(task); setLoading(true);
+    try {
+      const [s, sc, cfg] = await Promise.all([DB.getSubmissions(task.id), DB.getScorings(task.id), DB.getScoringConfig(task.id)]);
+      setSubs(s); setScorings(sc); setConfig(cfg);
+    } catch(e){toast.show('取得エラー: '+e.message,'error');}
+    finally{setLoading(false);}
+  };
+
+  const getMark = (submissionId, fieldId) => {
+    const s = scorings.find(s=>s.submission_id===submissionId&&s.field_id===fieldId);
+    return s ? s.mark : null;
+  };
+
+  const setMark = async (submissionId, fieldId, mark) => {
+    try {
+      await DB.saveScoring(selTask.id, submissionId, fieldId, mark);
+      setScorings(prev=>{
+        const filtered = prev.filter(s=>!(s.submission_id===submissionId&&s.field_id===fieldId));
+        return [...filtered, {submission_id:submissionId, field_id:fieldId, mark, task_id:selTask.id}];
+      });
+    } catch(e){toast.show('保存エラー: '+e.message,'error');}
+  };
+
+  const saveConfig = async () => {
+    if (!selTask) return;
+    setSaving(true);
+    try { await DB.saveScoringConfig(selTask.id, config); toast.show('配点を保存しました','success'); }
+    catch(e){toast.show('保存エラー: '+e.message,'error');}
+    finally{setSaving(false);}
+  };
+
+  const calcScore = (sub) => {
+    const fields = selTask.answerFields||[];
+    let total=0, earned=0;
+    fields.forEach(f=>{
+      const pts = Number(config[f.id]||0);
+      total += pts;
+      const mark = getMark(sub.id, f.id);
+      if (mark==='correct') earned+=pts;
+      else if (mark==='partial') earned+=Math.floor(pts/2);
+    });
+    return {earned, total};
+  };
+
+  const markLabels = {correct:'○', partial:'△', wrong:'✕'};
+  const markColors = {correct:'#065F46', partial:'#D97706', wrong:'#DC2626'};
+
+  if (!selTask) return (
+    <div>
+      <div className="dashboard-title" style={{marginBottom:20}}>採点する課題を選択</div>
+      {tasks.length===0?(
+        <div style={{textAlign:'center',padding:'40px',color:'var(--stone)'}}>課題がありません</div>
+      ):(
+        <div className="task-grid">
+          {tasks.map(task=>(
+            <div key={task.id} className="task-card" style={{cursor:'pointer'}} onClick={()=>selectTask(task)}>
+              <div className="task-card-title">{task.title}</div>
+              <div className="task-card-meta">{task.description}</div>
+              <div style={{marginTop:4}}><span className={`badge ${task.isPublished?'badge-published':'badge-draft'}`}>{task.isPublished?'公開中':'非公開'}</span></div>
+              <div className="task-card-meta">回答欄 {(task.answerFields||[]).length} 個</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const fields = selTask.answerFields||[];
+
+  return (
+    <div>
+      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:20,flexWrap:'wrap'}}>
+        <button className="btn btn-ghost btn-sm" onClick={()=>setSelTask(null)}>← 課題一覧</button>
+        <div className="dashboard-title">{selTask.title} — 採点</div>
+      </div>
+
+      {/* 配点設定 */}
+      <div className="side-panel" style={{marginBottom:24}}>
+        <div className="side-panel-title">⚖️ 配点設定（問題ごとの点数）</div>
+        <div style={{display:'flex',gap:12,flexWrap:'wrap',alignItems:'flex-end'}}>
+          {fields.map(f=>(
+            <div key={f.id} style={{display:'flex',flexDirection:'column',gap:4,minWidth:80}}>
+              <label style={{fontSize:12,fontWeight:700,color:'var(--stone)'}}>{f.label}</label>
+              <input className="form-input" type="number" min="0" max="100" style={{width:80,textAlign:'center',padding:'8px'}}
+                value={config[f.id]||''} placeholder="0"
+                onChange={e=>setConfig(c=>({...c,[f.id]:e.target.value}))}/>
+            </div>
+          ))}
+          <button className="btn btn-gold btn-sm" onClick={saveConfig} disabled={saving}>
+            {saving?<><span className="spinner dark"/> 保存中…</>:'💾 配点を保存'}
+          </button>
+        </div>
+        <div style={{fontSize:12,color:'var(--stone)'}}>
+          合計配点: {fields.reduce((s,f)=>s+Number(config[f.id]||0),0)} 点　
+          △は配点の半分として計算されます
+        </div>
+      </div>
+
+      {/* 採点テーブル */}
+      {loading?(
+        <div style={{textAlign:'center',padding:'40px'}}><span className="spinner dark" style={{width:28,height:28,borderWidth:3}}/></div>
+      ):subs.length===0?(
+        <div style={{textAlign:'center',padding:'60px',color:'var(--stone)'}}>
+          <div style={{fontSize:40,marginBottom:10}}>📭</div>まだ提出がありません
+        </div>
+      ):(
+        <div style={{overflowX:'auto'}}>
+          <table className="sub-table">
+            <thead>
+              <tr>
+                <th>生徒</th>
+                <th>提出日時</th>
+                {fields.map(f=>(
+                  <th key={f.id}>
+                    {f.label}<br/>
+                    <span style={{fontWeight:400,color:'var(--stone)'}}>{config[f.id]||0}点</span>
+                  </th>
+                ))}
+                <th>得点</th>
+              </tr>
+            </thead>
+            <tbody>
+              {subs.map(sub=>{
+                const {earned,total}=calcScore(sub);
+                return (
+                  <tr key={sub.id}>
+                    <td><strong>{sub.nickname}</strong></td>
+                    <td className="mono" style={{fontSize:11}}>{sub.submittedAt?.slice(0,16).replace('T',' ')}</td>
+                    {fields.map(f=>{
+                      const mark=getMark(sub.id,f.id);
+                      return (
+                        <td key={f.id}>
+                          <div style={{fontSize:11,color:'var(--stone)',marginBottom:4}}>
+                            <span className="answer-chip">{sub.answers[f.id]||'—'}</span>
+                          </div>
+                          <div style={{display:'flex',gap:4}}>
+                            {['correct','partial','wrong'].map(m=>(
+                              <button key={m} className={`mark-btn ${m} ${mark===m?'active':''}`}
+                                title={m==='correct'?'正解':m==='partial'?'部分点':'不正解'}
+                                onClick={()=>setMark(sub.id,f.id,m)}>
+                                {markLabels[m]}
+                              </button>
+                            ))}
+                          </div>
+                        </td>
+                      );
+                    })}
+                    <td>
+                      <span className="score-total">{earned}</span>
+                      <span style={{fontSize:12,color:'var(--stone)'}}> / {total}</span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
 
-/* ══════════════════════════════════════════
+/* ── ホワイトボードタブ（教師） ── */
+function WhiteboardTab({ teacher, toast }) {
+  const [tasks,setTasks]=useState([]); const [isLive,setIsLive]=useState(false); const [sessionId,setSessionId]=useState(null); const [sessionCode,setSessionCode]=useState(''); const [selTaskId,setSelTaskId]=useState(''); const [showStart,setShowStart]=useState(false);
+  const [tool,setTool]=useState('pen'); // pen | line | circle
+  const [color,setColor]=useState('#1A1410');
+  const [strokeWidth,setStrokeWidth]=useState(3);
+  const canvasRef=useRef(null); const drawing=useRef(false); const startPos=useRef({x:0,y:0}); const snapshotRef=useRef(null);
+
+  useEffect(()=>{
+    DB.getTasks().then(setTasks).catch(()=>{});
+  },[]);
+
+  const getPos = (e,canvas) => {
+    const rect=canvas.getBoundingClientRect();
+    const scaleX=canvas.width/rect.width, scaleY=canvas.height/rect.height;
+    const src=e.touches?e.touches[0]:e;
+    return {x:(src.clientX-rect.left)*scaleX, y:(src.clientY-rect.top)*scaleY};
+  };
+
+  const broadcast = useCallback(async (strokeData) => {
+    if (!supabase||!sessionId) return;
+    try {
+      await supabase.from('whiteboard_strokes').insert([{id:genId(),session_id:sessionId,stroke_data:strokeData,created_at:new Date().toISOString()}]);
+    } catch(e){}
+  },[sessionId]);
+
+  const startLive = async () => {
+    const code = genCode();
+    const id   = genId();
+    try {
+      await DB.createWbSession({ id, access_code:code, task_id:selTaskId||null, is_live:true, created_by:teacher.teacherId, created_at:new Date().toISOString() });
+      setSessionId(id); setSessionCode(code); setIsLive(true); setShowStart(false);
+      toast.show('配信開始しました！コード: '+code,'success');
+    } catch(e){toast.show('配信開始エラー: '+e.message,'error');}
+  };
+
+  const stopLive = async () => {
+    try {
+      await DB.endWbSession(sessionId);
+      await DB.clearWbStrokes(sessionId);
+    } catch(e){}
+    setIsLive(false); setSessionId(null); setSessionCode('');
+    const canvas=canvasRef.current;
+    if (canvas) { const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height); }
+    toast.show('配信を終了しました');
+  };
+
+  const clearCanvas = async () => {
+    const canvas=canvasRef.current; if(!canvas)return;
+    const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height);
+    if (sessionId) await DB.clearWbStrokes(sessionId);
+    await broadcast({type:'clear'});
+  };
+
+  const onDown = (e) => {
+    if (!isLive) return;
+    e.preventDefault();
+    const canvas=canvasRef.current; const ctx=canvas.getContext('2d');
+    const pos=getPos(e,canvas);
+    drawing.current=true; startPos.current=pos;
+    snapshotRef.current=ctx.getImageData(0,0,canvas.width,canvas.height);
+    if (tool==='pen'){ctx.beginPath();ctx.moveTo(pos.x,pos.y);}
+  };
+
+  const onMove = (e) => {
+    if (!drawing.current||!isLive) return;
+    e.preventDefault();
+    const canvas=canvasRef.current; const ctx=canvas.getContext('2d');
+    const pos=getPos(e,canvas);
+    ctx.strokeStyle=color; ctx.lineWidth=strokeWidth; ctx.lineCap='round'; ctx.lineJoin='round';
+    if (tool==='pen'){
+      ctx.lineTo(pos.x,pos.y); ctx.stroke();
+    } else {
+      ctx.putImageData(snapshotRef.current,0,0);
+      ctx.beginPath();
+      if (tool==='line'){
+        ctx.moveTo(startPos.current.x,startPos.current.y); ctx.lineTo(pos.x,pos.y); ctx.stroke();
+      } else if (tool==='circle'){
+        const rx=Math.abs(pos.x-startPos.current.x)/2, ry=Math.abs(pos.y-startPos.current.y)/2;
+        const cx=startPos.current.x+(pos.x-startPos.current.x)/2, cy=startPos.current.y+(pos.y-startPos.current.y)/2;
+        ctx.ellipse(cx,cy,rx,ry,0,0,2*Math.PI); ctx.stroke();
+      }
+    }
+  };
+
+  const onUp = async (e) => {
+    if (!drawing.current||!isLive) return;
+    e.preventDefault();
+    drawing.current=false;
+    const canvas=canvasRef.current;
+    const dataUrl=canvas.toDataURL('image/png');
+    await broadcast({type:'snapshot',data:dataUrl});
+  };
+
+  useEffect(()=>{
+    const canvas=canvasRef.current; if(!canvas)return;
+    canvas.width=900; canvas.height=600;
+  },[]);
+
+  const colors=['#1A1410','#9B1B30','#C9972C','#1E40AF','#065F46','#7C3AED','#FFFFFF'];
+
+  return (
+    <div className="wb-wrap">
+      {/* コントロールバー */}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:10,marginBottom:8}}>
+        <div className="dashboard-title">🖊 ホワイトボード</div>
+        <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+          {isLive&&(
+            <>
+              <div className="live-badge"><span className="live-dot"/>LIVE</div>
+              <div style={{fontFamily:'DM Mono',fontSize:18,fontWeight:700,color:'var(--crimson)',letterSpacing:'.1em',background:'rgba(155,27,48,.07)',padding:'4px 12px',borderRadius:8}}>
+                {sessionCode}
+              </div>
+              <button className="btn btn-ghost btn-sm" onClick={clearCanvas}>🗑 クリア</button>
+              <button className="btn btn-reject btn-sm" onClick={stopLive}>⏹ 配信終了</button>
+            </>
+          )}
+          {!isLive&&<button className="btn btn-live" onClick={()=>setShowStart(true)}>▶ 配信開始</button>}
+        </div>
+      </div>
+
+      {/* ツールバー */}
+      <div className="wb-toolbar">
+        <span style={{fontSize:12,fontWeight:700,color:'var(--stone)'}}>ツール：</span>
+        {[['pen','✏️','フリー'],['line','📏','直線'],['circle','⭕','円']].map(([t,icon,label])=>(
+          <button key={t} className={`wb-tool-btn ${tool===t?'active':''}`} title={label} onClick={()=>setTool(t)}>{icon}</button>
+        ))}
+        <div style={{width:1,height:24,background:'var(--stone-lt)',margin:'0 4px'}}/>
+        <span style={{fontSize:12,fontWeight:700,color:'var(--stone)'}}>色：</span>
+        {colors.map(c=>(
+          <div key={c} className={`wb-color-btn ${color===c?'active':''}`} style={{background:c,boxShadow:c==='#FFFFFF'?'inset 0 0 0 1px #ccc':undefined}} onClick={()=>setColor(c)}/>
+        ))}
+        <div style={{width:1,height:24,background:'var(--stone-lt)',margin:'0 4px'}}/>
+        <span style={{fontSize:12,fontWeight:700,color:'var(--stone)'}}>太さ：</span>
+        {[2,4,8,14].map(w=>(
+          <button key={w} className={`wb-tool-btn ${strokeWidth===w?'active':''}`} style={{fontSize:10,fontWeight:700}} onClick={()=>setStrokeWidth(w)}>{w}</button>
+        ))}
+      </div>
+
+      {/* キャンバス */}
+      <div style={{position:'relative',borderRadius:14,overflow:'hidden',boxShadow:'0 2px 12px var(--shadow)'}}>
+        <canvas ref={canvasRef} className="wb-canvas"
+          style={{width:'100%',cursor:isLive?'crosshair':'not-allowed',opacity:isLive?1:.6}}
+          onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
+          onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}/>
+        {!isLive&&(
+          <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(249,244,237,.7)'}}>
+            <div style={{textAlign:'center'}}>
+              <div style={{fontSize:48,marginBottom:12}}>🖊</div>
+              <div style={{fontFamily:'Noto Serif JP',fontSize:16,fontWeight:700,color:'var(--stone)'}}>「配信開始」を押すと描けるようになります</div>
+            </div>
+          </div>
+        )}
+      </div>
+      <div style={{fontSize:12,color:'var(--stone)'}}>
+        配信中は生徒がアクセスコードを入力するとリアルタイムで板書が見られます
+      </div>
+
+      {/* 配信開始モーダル */}
+      {showStart&&(
+        <div className="modal-overlay" onClick={()=>setShowStart(false)}>
+          <div className="modal" onClick={e=>e.stopPropagation()}>
+            <div className="modal-title">▶ 配信を開始する</div>
+            <div className="form-group">
+              <label className="form-label">関連課題（任意）</label>
+              <select className="form-select" value={selTaskId} onChange={e=>setSelTaskId(e.target.value)}>
+                <option value="">── 白紙ボード ──</option>
+                {tasks.map(t=><option key={t.id} value={t.id}>{t.title}</option>)}
+              </select>
+              <div className="form-hint">課題プリント画像をボードの背景に表示します</div>
+            </div>
+            <div style={{background:'var(--paper)',borderRadius:10,padding:14,fontSize:13,color:'var(--stone)',lineHeight:1.8}}>
+              配信すると新しいアクセスコードが発行されます。<br/>
+              生徒はそのコードを入力すると板書をリアルタイムで視聴できます。
+            </div>
+            <div className="modal-actions">
+              <button className="btn btn-ghost" onClick={()=>setShowStart(false)}>キャンセル</button>
+              <button className="btn btn-live" onClick={startLive}>▶ 今すぐ配信開始</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════════════════════
    課題作成
-══════════════════════════════════════════ */
+══════════════════════════════════ */
 function TaskCreator({ teacher, onDone, toast }) {
-  const [title,  setTitle]  = useState('');
-  const [desc,   setDesc]   = useState('');
-  const [imgUrl, setImgUrl] = useState(null);
-  const [fields, setFields] = useState([]);
-  const [selField,  setSelField]  = useState(null);
-  const [drawing,   setDrawing]   = useState(null);
-  const [mode,   setMode]   = useState('text');
-  const [step,   setStep]   = useState(1);
-  const [saving, setSaving] = useState(false);
-  const [showLabelModal, setShowLabelModal] = useState(false);
-  const [pendingField,   setPendingField]   = useState(null);
-  const [labelInput,     setLabelInput]     = useState('');
+  const [title,setTitle]=useState(''); const [desc,setDesc]=useState('');
+  const [imgUrl,setImgUrl]=useState(null); const [fields,setFields]=useState([]);
+  const [selField,setSelField]=useState(null); const [drawing,setDrawing]=useState(null);
+  const [mode,setMode]=useState('text'); const [step,setStep]=useState(1);
+  const [saving,setSaving]=useState(false);
+  const [showLabelModal,setShowLabelModal]=useState(false); const [pendingField,setPendingField]=useState(null); const [labelInput,setLabelInput]=useState('');
+  /* 解説 */
+  const [expText,setExpText]=useState(''); const [expImg,setExpImg]=useState(null);
 
-  const canvasRef = useRef(null);
-  const fileRef   = useRef(null);
+  const canvasRef=useRef(null); const fileRef=useRef(null); const expImgRef=useRef(null);
 
-  const getPct = (clientX, clientY) => {
-    const rect = canvasRef.current.getBoundingClientRect();
-    return {
-      x: Math.max(0,Math.min(100,((clientX-rect.left)/rect.width)*100)),
-      y: Math.max(0,Math.min(100,((clientY-rect.top)/rect.height)*100)),
-    };
-  };
-  const getClient = (e) => e.touches?.length ? {clientX:e.touches[0].clientX,clientY:e.touches[0].clientY} : {clientX:e.clientX,clientY:e.clientY};
+  const getPct=(clientX,clientY)=>{const rect=canvasRef.current.getBoundingClientRect();return{x:Math.max(0,Math.min(100,((clientX-rect.left)/rect.width)*100)),y:Math.max(0,Math.min(100,((clientY-rect.top)/rect.height)*100))};};
+  const getClient=(e)=>e.touches?.length?{clientX:e.touches[0].clientX,clientY:e.touches[0].clientY}:{clientX:e.clientX,clientY:e.clientY};
+  const onPointerDown=(e)=>{if(!imgUrl)return;e.preventDefault();const{clientX,clientY}=getClient(e);const p=getPct(clientX,clientY);setDrawing({x0:p.x,y0:p.y,x1:p.x,y1:p.y});setSelField(null);};
+  const onPointerMove=(e)=>{if(!drawing)return;e.preventDefault();const{clientX,clientY}=getClient(e);const p=getPct(clientX,clientY);setDrawing(d=>({...d,x1:p.x,y1:p.y}));};
+  const onPointerUp=(e)=>{if(!drawing)return;e.preventDefault();const x=Math.min(drawing.x0,drawing.x1),y=Math.min(drawing.y0,drawing.y1),w=Math.abs(drawing.x1-drawing.x0),h=Math.abs(drawing.y1-drawing.y0);setDrawing(null);if(w<1||h<1)return;const nf={id:genId(),type:mode,x,y,width:w,height:h,label:`問${fields.length+1}`};setPendingField(nf);setLabelInput(nf.label);setShowLabelModal(true);};
+  const confirmLabel=()=>{const f={...pendingField,label:labelInput||pendingField.label};setFields(fs=>[...fs,f]);setSelField(f.id);setShowLabelModal(false);setPendingField(null);};
+  const deleteField=(id)=>{setFields(fs=>fs.filter(f=>f.id!==id));if(selField===id)setSelField(null);};
+  const handleFile=(file)=>{if(!file)return;if(!file.type.startsWith('image/')&&file.type!=='application/pdf'){toast.show('画像またはPDFを選択してください','error');return;}const reader=new FileReader();reader.onload=(ev)=>{setImgUrl(ev.target.result);setStep(3);};reader.readAsDataURL(file);};
+  const handleExpImg=(file)=>{if(!file)return;const reader=new FileReader();reader.onload=(ev)=>setExpImg(ev.target.result);reader.readAsDataURL(file);};
 
-  const onPointerDown = (e) => { if(!imgUrl)return; e.preventDefault(); const {clientX,clientY}=getClient(e); const p=getPct(clientX,clientY); setDrawing({x0:p.x,y0:p.y,x1:p.x,y1:p.y}); setSelField(null); };
-  const onPointerMove = (e) => { if(!drawing)return; e.preventDefault(); const {clientX,clientY}=getClient(e); const p=getPct(clientX,clientY); setDrawing(d=>({...d,x1:p.x,y1:p.y})); };
-  const onPointerUp   = (e) => {
-    if(!drawing)return; e.preventDefault();
-    const x=Math.min(drawing.x0,drawing.x1), y=Math.min(drawing.y0,drawing.y1);
-    const w=Math.abs(drawing.x1-drawing.x0), h=Math.abs(drawing.y1-drawing.y0);
-    setDrawing(null); if(w<1||h<1)return;
-    const nf={id:genId(),type:mode,x,y,width:w,height:h,label:`問${fields.length+1}`};
-    setPendingField(nf); setLabelInput(nf.label); setShowLabelModal(true);
-  };
-
-  const confirmLabel = () => {
-    const f={...pendingField,label:labelInput||pendingField.label};
-    setFields(fs=>[...fs,f]); setSelField(f.id); setShowLabelModal(false); setPendingField(null);
-  };
-  const deleteField = (id) => { setFields(fs=>fs.filter(f=>f.id!==id)); if(selField===id)setSelField(null); };
-
-  const handleFile = (file) => {
-    if(!file)return;
-    if(!file.type.startsWith('image/')&&file.type!=='application/pdf'){toast.show('画像またはPDFを選択してください','error');return;}
-    const reader=new FileReader();
-    reader.onload=(ev)=>{setImgUrl(ev.target.result);setStep(3);};
-    reader.readAsDataURL(file);
-  };
-
-  const save = async () => {
+  const save=async()=>{
     if(!title.trim()){toast.show('課題タイトルを入力してください','error');return;}
     setSaving(true);
     try {
-      await DB.createTask({id:genId(),title:title.trim(),description:desc.trim(),imageDataUrl:imgUrl,accessCode:genCode(),createdBy:teacher.teacherId,isPublished:false,answerFields:fields});
+      await DB.createTask({id:genId(),title:title.trim(),description:desc.trim(),imageDataUrl:imgUrl,accessCode:genCode(),createdBy:teacher.teacherId,isPublished:false,answerFields:fields,explanationText:expText.trim(),explanationImageUrl:expImg});
       toast.show('課題を保存しました','success');
       onDone();
-    } catch(e){toast.show('保存に失敗しました: '+e.message,'error');}
+    } catch(e){toast.show('保存エラー: '+e.message,'error');}
     finally{setSaving(false);}
   };
 
-  const drawRect = drawing ? {left:Math.min(drawing.x0,drawing.x1)+'%',top:Math.min(drawing.y0,drawing.y1)+'%',width:Math.abs(drawing.x1-drawing.x0)+'%',height:Math.abs(drawing.y1-drawing.y0)+'%'} : null;
+  const drawRect=drawing?{left:Math.min(drawing.x0,drawing.x1)+'%',top:Math.min(drawing.y0,drawing.y1)+'%',width:Math.abs(drawing.x1-drawing.x0)+'%',height:Math.abs(drawing.y1-drawing.y0)+'%'}:null;
+
+  const stepLabels=['課題情報','プリントアップロード','回答欄の配置','解説を設定'];
 
   return (
     <div className="main">
       <div className="flex-row" style={{marginBottom:20,gap:6,flexWrap:'wrap'}}>
         <button className="btn btn-ghost btn-sm" onClick={onDone}>← 戻る</button>
         <div style={{flex:1}}/>
-        {['課題情報','プリントアップロード','回答欄の配置'].map((s,i)=>(
+        {stepLabels.map((s,i)=>(
           <div key={i} style={{display:'flex',alignItems:'center',gap:4,opacity:step===i+1?1:.45,fontSize:12,fontWeight:step===i+1?700:400,color:step===i+1?'var(--crimson)':'var(--stone)'}}>
             <div style={{width:20,height:20,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,background:step>i?'var(--crimson)':step===i+1?'var(--crimson)':'var(--paper-dk)',color:step>=i+1?'white':'var(--stone)',fontWeight:700}}>{i+1}</div>
-            <span>{s}</span>
+            <span style={{display:window.innerWidth<600?'none':'inline'}}>{s}</span>
           </div>
         ))}
       </div>
 
-      {step===1 && (
+      {/* Step1: 課題情報 */}
+      {step===1&&(
         <div className="form-box" style={{maxWidth:560}}>
           <div className="form-title">① 課題情報を入力</div>
-          <div className="form-group">
-            <label className="form-label">課題タイトル <span style={{color:'var(--crimson)'}}>*</span></label>
-            <input className="form-input" placeholder="例: 一次方程式 練習プリント①" value={title} onChange={e=>setTitle(e.target.value)}/>
-          </div>
-          <div className="form-group">
-            <label className="form-label">説明（任意）</label>
-            <textarea className="form-textarea" placeholder="例: 教科書 p.42〜43 の問題です" value={desc} onChange={e=>setDesc(e.target.value)}/>
-          </div>
+          <div className="form-group"><label className="form-label">課題タイトル <span style={{color:'var(--crimson)'}}>*</span></label><input className="form-input" placeholder="例: 一次方程式 練習プリント①" value={title} onChange={e=>setTitle(e.target.value)}/></div>
+          <div className="form-group"><label className="form-label">説明（任意）</label><textarea className="form-textarea" placeholder="例: 教科書 p.42〜43 の問題です" value={desc} onChange={e=>setDesc(e.target.value)}/></div>
           <button className="btn btn-primary btn-full mt-8" disabled={!title.trim()} onClick={()=>setStep(2)}>次へ →</button>
         </div>
       )}
 
-      {step===2 && (
+      {/* Step2: Upload */}
+      {step===2&&(
         <div className="form-box" style={{maxWidth:560}}>
           <div className="form-title">② プリントをアップロード</div>
           <div className="upload-zone" onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();handleFile(e.dataTransfer.files?.[0]);}} onClick={()=>fileRef.current.click()}>
@@ -979,108 +1217,89 @@ function TaskCreator({ teacher, onDone, toast }) {
             <input ref={fileRef} type="file" accept="image/*,application/pdf" style={{display:'none'}} onChange={e=>handleFile(e.target.files?.[0])}/>
           </div>
           <div className="divider"/>
-          <div style={{textAlign:'center'}}>
-            <div className="text-muted" style={{marginBottom:12}}>または</div>
-            <button className="btn btn-ghost btn-full" onClick={()=>{setImgUrl(null);setStep(3);}}>画像なしで進む</button>
-          </div>
+          <div style={{textAlign:'center'}}><div className="text-muted" style={{marginBottom:12}}>または</div><button className="btn btn-ghost btn-full" onClick={()=>{setImgUrl(null);setStep(3);}}>画像なしで進む</button></div>
           <button className="btn btn-ghost btn-sm mt-16" onClick={()=>setStep(1)}>← 戻る</button>
         </div>
       )}
 
-      {step===3 && (
-        <div className="creator-layout">
-          <div className="canvas-wrapper">
-            <div className="canvas-toolbar">
-              <span style={{fontSize:12,fontWeight:700,color:'var(--stone)'}}>回答欄の種類：</span>
-              <button className={`btn btn-sm ${mode==='text'?'btn-primary':'btn-ghost'}`} onClick={()=>setMode('text')}>📝 テキスト</button>
-              <button className={`btn btn-sm ${mode==='number'?'btn-primary':'btn-ghost'}`} onClick={()=>setMode('number')}>🔢 数値</button>
-              <div style={{flex:1}}/>
-              <span style={{fontSize:11,color:'var(--stone)'}}>{imgUrl?'ドラッグして回答欄を配置':'プリントなし'}</span>
-            </div>
-            <div className="canvas-area" ref={canvasRef}
-              onMouseDown={onPointerDown} onMouseMove={onPointerMove} onMouseUp={onPointerUp}
-              onTouchStart={onPointerDown} onTouchMove={onPointerMove} onTouchEnd={onPointerUp}>
-              {imgUrl ? (
-                <>
+      {/* Step3: Fields */}
+      {step===3&&(
+        <>
+          <div className="creator-layout">
+            <div className="canvas-wrapper">
+              <div className="canvas-toolbar">
+                <span style={{fontSize:12,fontWeight:700,color:'var(--stone)'}}>回答欄の種類：</span>
+                <button className={`btn btn-sm ${mode==='text'?'btn-primary':'btn-ghost'}`} onClick={()=>setMode('text')}>📝 テキスト</button>
+                <button className={`btn btn-sm ${mode==='number'?'btn-primary':'btn-ghost'}`} onClick={()=>setMode('number')}>🔢 数値</button>
+                <div style={{flex:1}}/><span style={{fontSize:11,color:'var(--stone)'}}>{imgUrl?'ドラッグして配置':'プリントなし'}</span>
+              </div>
+              <div className="canvas-area" ref={canvasRef} onMouseDown={onPointerDown} onMouseMove={onPointerMove} onMouseUp={onPointerUp} onTouchStart={onPointerDown} onTouchMove={onPointerMove} onTouchEnd={onPointerUp}>
+                {imgUrl?(<>
                   <img src={imgUrl} alt="プリント" draggable={false}/>
-                  {fields.map(f=>(
-                    <div key={f.id} className={`field-overlay ${selField===f.id?'selected':''}`}
-                      style={{left:f.x+'%',top:f.y+'%',width:f.width+'%',height:f.height+'%'}}
-                      onClick={e=>{e.stopPropagation();setSelField(f.id);}}>
-                      <div className="field-label-chip">{f.label}</div>
-                      <span style={{fontSize:10,opacity:.6,pointerEvents:'none'}}>{f.type==='number'?'🔢':'📝'}</span>
-                    </div>
-                  ))}
-                  {drawRect && <div className="draw-rect" style={drawRect}/>}
-                </>
-              ) : (
-                <div className="canvas-placeholder">
-                  <div className="big-icon">📋</div>
-                  <p>プリント画像なしモード<br/>右パネルで回答欄を手動追加できます</p>
+                  {fields.map(f=>(<div key={f.id} className={`field-overlay ${selField===f.id?'selected':''}`} style={{left:f.x+'%',top:f.y+'%',width:f.width+'%',height:f.height+'%'}} onClick={e=>{e.stopPropagation();setSelField(f.id);}}><div className="field-label-chip">{f.label}</div><span style={{fontSize:10,opacity:.6,pointerEvents:'none'}}>{f.type==='number'?'🔢':'📝'}</span></div>))}
+                  {drawRect&&<div className="draw-rect" style={drawRect}/>}
+                </>):(
+                  <div className="canvas-placeholder"><div className="big-icon">📋</div><p>プリット画像なしモード<br/>右パネルで回答欄を手動追加できます</p></div>
+                )}
+              </div>
+            </div>
+            <div className="side-panel">
+              <div className="side-panel-title">回答欄リスト</div>
+              {fields.length===0?(<div className="empty-hint">{imgUrl?'プリント上をドラッグして配置':'下のボタンで追加'}</div>):(
+                <div className="field-list">
+                  {fields.map((f,i)=>(<div key={f.id} className={`field-item ${selField===f.id?'selected':''}`} onClick={()=>setSelField(f.id)}><div className="field-item-num">{i+1}</div><div className="field-item-info"><div className="field-item-name">{f.label}</div><div className="field-item-type"><span className={`type-pill ${f.type==='number'?'type-number':'type-text'}`}>{f.type==='number'?'数値':'テキスト'}</span></div></div><button className="btn btn-sm btn-ghost" style={{padding:'4px 8px',color:'var(--crimson)'}} onClick={e=>{e.stopPropagation();deleteField(f.id);}}>✕</button></div>))}
                 </div>
               )}
+              {!imgUrl&&(<><div className="divider"/><div className="form-group" style={{gap:4}}><label className="form-label">手動で追加</label><select className="form-select" value={mode} onChange={e=>setMode(e.target.value)}><option value="text">テキスト</option><option value="number">数値</option></select></div><button className="btn btn-secondary btn-full" onClick={()=>{const f={id:genId(),type:mode,x:5,y:5+fields.length*8,width:40,height:6,label:`問${fields.length+1}`};setFields(fs=>[...fs,f]);setSelField(f.id);}}>＋ 回答欄を追加</button></>)}
+              <div className="divider"/>
+              <button className="btn btn-primary btn-full" onClick={()=>setStep(4)}>次へ：解説を設定 →</button>
+              <button className="btn btn-ghost btn-full btn-sm" onClick={()=>setStep(2)}>← 戻る</button>
             </div>
           </div>
+        </>
+      )}
 
-          <div className="side-panel">
-            <div className="side-panel-title">回答欄リスト</div>
-            {fields.length===0 ? (
-              <div className="empty-hint">{imgUrl?'プリント上をドラッグして\n回答欄を配置してください':'下のボタンで回答欄を追加できます'}</div>
-            ) : (
-              <div className="field-list">
-                {fields.map((f,i)=>(
-                  <div key={f.id} className={`field-item ${selField===f.id?'selected':''}`} onClick={()=>setSelField(f.id)}>
-                    <div className="field-item-num">{i+1}</div>
-                    <div className="field-item-info">
-                      <div className="field-item-name">{f.label}</div>
-                      <div className="field-item-type"><span className={`type-pill ${f.type==='number'?'type-number':'type-text'}`}>{f.type==='number'?'数値':'テキスト'}</span></div>
-                    </div>
-                    <button className="btn btn-sm btn-ghost" style={{padding:'4px 8px',color:'var(--crimson)'}} onClick={e=>{e.stopPropagation();deleteField(f.id);}}>✕</button>
-                  </div>
-                ))}
+      {/* Step4: 解説 */}
+      {step===4&&(
+        <div className="form-box" style={{maxWidth:640}}>
+          <div className="form-title">④ 解説を設定（任意）</div>
+          <div style={{fontSize:13,color:'var(--stone)',marginBottom:20,lineHeight:1.8}}>
+            生徒が回答を提出した後に表示される解説です。設定しない場合は提出完了画面のみ表示されます。
+          </div>
+          <div className="form-group">
+            <label className="form-label">解説テキスト</label>
+            <textarea className="form-textarea" style={{minHeight:140}} placeholder="例：この問題は両辺に3をかけて…" value={expText} onChange={e=>setExpText(e.target.value)}/>
+          </div>
+          <div className="form-group">
+            <label className="form-label">解説画像（任意）</label>
+            {expImg?(
+              <div style={{position:'relative',display:'inline-block'}}>
+                <img src={expImg} alt="解説画像" style={{width:'100%',borderRadius:8,border:'2px solid var(--paper-dk)'}}/>
+                <button className="btn btn-ghost btn-sm" style={{position:'absolute',top:8,right:8,color:'var(--crimson)'}} onClick={()=>setExpImg(null)}>✕ 削除</button>
+              </div>
+            ):(
+              <div className="upload-zone" onClick={()=>expImgRef.current.click()} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();handleExpImg(e.dataTransfer.files?.[0]);}}>
+                <div className="big">🖼</div>
+                <p>解説画像をアップロード（PNG/JPG）</p>
+                <input ref={expImgRef} type="file" accept="image/*" style={{display:'none'}} onChange={e=>handleExpImg(e.target.files?.[0])}/>
               </div>
             )}
-            {!imgUrl && (
-              <>
-                <div className="divider"/>
-                <div className="form-group" style={{gap:4}}>
-                  <label className="form-label">手動で回答欄を追加</label>
-                  <select className="form-select" value={mode} onChange={e=>setMode(e.target.value)}>
-                    <option value="text">テキスト</option>
-                    <option value="number">数値</option>
-                  </select>
-                </div>
-                <button className="btn btn-secondary btn-full" onClick={()=>{const f={id:genId(),type:mode,x:5,y:5+fields.length*8,width:40,height:6,label:`問${fields.length+1}`};setFields(fs=>[...fs,f]);setSelField(f.id);}}>＋ 回答欄を追加</button>
-              </>
-            )}
-            <div className="divider"/>
-            <button className="btn btn-primary btn-full" disabled={saving} onClick={save}>
-              {saving?<><span className="spinner"/> 保存中…</>:'💾 課題を保存する'}
-            </button>
-            <button className="btn btn-ghost btn-full btn-sm" onClick={()=>setStep(2)}>← プリントを変更</button>
           </div>
+          <div className="divider"/>
+          <button className="btn btn-primary btn-full btn-lg" disabled={saving} onClick={save}>
+            {saving?<><span className="spinner"/> 保存中…</>:'💾 課題を保存する'}
+          </button>
+          <button className="btn btn-ghost btn-full btn-sm mt-8" onClick={()=>setStep(3)}>← 回答欄の設定に戻る</button>
         </div>
       )}
 
-      {showLabelModal && (
+      {showLabelModal&&(
         <div className="modal-overlay" onClick={()=>setShowLabelModal(false)}>
           <div className="modal" onClick={e=>e.stopPropagation()}>
             <div className="modal-title">回答欄のラベルを設定</div>
-            <div className="form-group">
-              <label className="form-label">ラベル（例: 問1、(ア)など）</label>
-              <input className="form-input" value={labelInput} onChange={e=>setLabelInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&confirmLabel()} autoFocus/>
-            </div>
-            <div className="form-group">
-              <label className="form-label">種類</label>
-              <select className="form-select" value={pendingField?.type||mode} onChange={e=>setPendingField(f=>({...f,type:e.target.value}))}>
-                <option value="text">テキスト（文字・式）</option>
-                <option value="number">数値</option>
-              </select>
-            </div>
-            <div className="modal-actions">
-              <button className="btn btn-ghost" onClick={()=>setShowLabelModal(false)}>キャンセル</button>
-              <button className="btn btn-primary" onClick={confirmLabel}>決定</button>
-            </div>
+            <div className="form-group"><label className="form-label">ラベル（例: 問1、(ア)など）</label><input className="form-input" value={labelInput} onChange={e=>setLabelInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&confirmLabel()} autoFocus/></div>
+            <div className="form-group"><label className="form-label">種類</label><select className="form-select" value={pendingField?.type||mode} onChange={e=>setPendingField(f=>({...f,type:e.target.value}))}><option value="text">テキスト（文字・式）</option><option value="number">数値</option></select></div>
+            <div className="modal-actions"><button className="btn btn-ghost" onClick={()=>setShowLabelModal(false)}>キャンセル</button><button className="btn btn-primary" onClick={confirmLabel}>決定</button></div>
           </div>
         </div>
       )}
@@ -1088,19 +1307,13 @@ function TaskCreator({ teacher, onDone, toast }) {
   );
 }
 
-/* ══════════════════════════════════════════
-   回答確認
-══════════════════════════════════════════ */
+/* ══════════════════════════════════
+   回答確認（教師）
+══════════════════════════════════ */
 function SubmissionReviewer({ task, onBack }) {
-  const [subs,    setSubs]    = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(()=>{
-    DB.getSubmissions(task.id).then(setSubs).catch(e=>console.error(e)).finally(()=>setLoading(false));
-  }, [task.id]);
-
-  const fields = task.answerFields||[];
-
+  const [subs,setSubs]=useState([]); const [loading,setLoading]=useState(true);
+  useEffect(()=>{DB.getSubmissions(task.id).then(setSubs).catch(e=>console.error(e)).finally(()=>setLoading(false));},[task.id]);
+  const fields=task.answerFields||[];
   return (
     <div className="main">
       <div className="review-header">
@@ -1108,16 +1321,7 @@ function SubmissionReviewer({ task, onBack }) {
         <div className="review-title">{task.title} — 回答一覧</div>
         <span className={`badge ${task.isPublished?'badge-published':'badge-draft'}`}>{task.isPublished?'公開中':'非公開'}</span>
       </div>
-      {loading ? (
-        <div style={{textAlign:'center',padding:'60px 0'}}>
-          <span className="spinner dark" style={{width:32,height:32,borderWidth:4}}/>
-          <div style={{marginTop:12,fontSize:14,color:'var(--stone)'}}>読み込み中…</div>
-        </div>
-      ) : subs.length===0 ? (
-        <div style={{textAlign:'center',padding:'60px 0',color:'var(--stone)'}}>
-          <div style={{fontSize:40,marginBottom:10}}>📭</div>まだ提出がありません
-        </div>
-      ) : (
+      {loading?(<div style={{textAlign:'center',padding:'60px 0'}}><span className="spinner dark" style={{width:32,height:32,borderWidth:4}}/></div>):subs.length===0?(<div style={{textAlign:'center',padding:'60px 0',color:'var(--stone)'}}><div style={{fontSize:40,marginBottom:10}}>📭</div>まだ提出がありません</div>):(
         <div style={{overflowX:'auto'}}>
           <table className="sub-table">
             <thead><tr><th>ニックネーム</th><th>提出日時</th>{fields.map(f=><th key={f.id}>{f.label}</th>)}</tr></thead>
@@ -1125,10 +1329,8 @@ function SubmissionReviewer({ task, onBack }) {
               {subs.map(sub=>(
                 <tr key={sub.id}>
                   <td><strong>{sub.nickname}</strong></td>
-                  <td className="mono" style={{fontSize:12}}>{sub.submittedAt?.slice(0,19).replace('T',' ')}</td>
-                  {fields.map(f=>(
-                    <td key={f.id}>{sub.answers[f.id]?<span className="answer-chip">{sub.answers[f.id]}</span>:<span style={{color:'var(--stone-lt)',fontSize:12}}>未回答</span>}</td>
-                  ))}
+                  <td className="mono" style={{fontSize:11}}>{sub.submittedAt?.slice(0,19).replace('T',' ')}</td>
+                  {fields.map(f=>(<td key={f.id}>{sub.answers[f.id]?<span className="answer-chip">{sub.answers[f.id]}</span>:<span style={{color:'var(--stone-lt)',fontSize:12}}>未回答</span>}</td>))}
                 </tr>
               ))}
             </tbody>
@@ -1139,32 +1341,33 @@ function SubmissionReviewer({ task, onBack }) {
   );
 }
 
-/* ══════════════════════════════════════════
+/* ══════════════════════════════════
    生徒フロー
-══════════════════════════════════════════ */
-function StudentCodeEntry({ onEnter, toast }) {
-  const [code,    setCode]    = useState('');
-  const [nick,    setNick]    = useState('');
-  const [err,     setErr]     = useState('');
-  const [loading, setLoading] = useState(false);
+══════════════════════════════════ */
+function StudentCodeEntry({ onEnter, onWatchLive, toast }) {
+  const [code,setCode]=useState(''); const [nick,setNick]=useState(''); const [err,setErr]=useState(''); const [loading,setLoading]=useState(false);
 
   const handle = async () => {
-    const trimmed = code.trim().toUpperCase();
+    const trimmed=code.trim().toUpperCase();
     if(trimmed.length<4){setErr('課題コードを入力してください');return;}
     if(!nick.trim()){setErr('ニックネームを入力してください');return;}
     setLoading(true); setErr('');
     try {
+      // まずホワイトボードセッションを確認
+      const session = await DB.findWbSession(trimmed);
+      if (session){onWatchLive(session, nick.trim()); return;}
+      // 通常の課題を確認
       const task = await DB.findTaskByCode(trimmed);
       if(!task){setErr('課題が見つかりません。コードを確認してください。');return;}
-      onEnter(task,nick.trim());
-    } catch(e){ setErr('エラーが発生しました: '+e.message); }
-    finally{ setLoading(false); }
+      onEnter(task, nick.trim());
+    } catch(e){setErr('エラーが発生しました: '+e.message);}
+    finally{setLoading(false);}
   };
 
   return (
     <div className="code-entry">
       <Kamon size={72}/>
-      <div className="code-title">課題コードを入力</div>
+      <div className="code-title">コードを入力</div>
       <ConfigBanner/>
       <input className="code-input" placeholder="例: AB1234" value={code} maxLength={8}
         onChange={e=>{setCode(e.target.value.toUpperCase());setErr('');}}
@@ -1176,40 +1379,46 @@ function StudentCodeEntry({ onEnter, toast }) {
           onKeyDown={e=>e.key==='Enter'&&handle()} maxLength={20}/>
         <div className="form-hint">本名は不要です（最大20文字）</div>
       </div>
-      {err && <div style={{color:'var(--crimson)',fontSize:13}}>{err}</div>}
+      {err&&<div style={{color:'var(--crimson)',fontSize:13}}>{err}</div>}
       <button className="btn btn-primary btn-lg btn-full" onClick={handle} disabled={loading}>
-        {loading?<><span className="spinner"/> 検索中…</>:'課題を開く →'}
+        {loading?<><span className="spinner"/> 検索中…</>:'開く →'}
       </button>
+      <div style={{fontSize:12,color:'var(--stone)'}}>課題コードまたはホワイトボードのLIVEコードを入力してください</div>
     </div>
   );
 }
 
+/* ── 生徒：回答シート ── */
 function AnswerSheet({ task, nickname, onSubmit }) {
-  const [answers,   setAnswers]   = useState({});
-  const [submitted, setSubmitted] = useState(false);
-  const [loading,   setLoading]   = useState(false);
+  const [answers,setAnswers]=useState({}); const [submitted,setSubmitted]=useState(false); const [loading,setLoading]=useState(false);
+  const fields=task.answerFields||[];
+  const filled=fields.filter(f=>(answers[f.id]||'').trim()!=='').length;
+  const total=fields.length; const pct=total===0?0:Math.round((filled/total)*100);
 
-  const fields = task.answerFields||[];
-  const filled = fields.filter(f=>(answers[f.id]||'').trim()!=='').length;
-  const total  = fields.length;
-  const pct    = total===0?0:Math.round((filled/total)*100);
-
-  const handleSubmit = async () => {
+  const handleSubmit=async()=>{
     if(filled<total){if(!window.confirm(`まだ ${total-filled} 問が未入力です。このまま提出しますか？`))return;}
     setLoading(true);
-    try {
-      await DB.createSubmission({id:genId(),taskId:task.id,nickname,answers:{...answers},submittedAt:new Date().toISOString()});
-      setSubmitted(true); onSubmit();
-    } catch(e){ alert('提出に失敗しました: '+e.message); }
-    finally{ setLoading(false); }
+    try{await DB.createSubmission({id:genId(),taskId:task.id,nickname,answers:{...answers},submittedAt:new Date().toISOString()});setSubmitted(true);onSubmit();}
+    catch(e){alert('提出に失敗しました: '+e.message);}
+    finally{setLoading(false);}
   };
 
   if(submitted) return (
-    <div className="done-page">
-      <div className="done-icon">🎉</div>
-      <div className="done-title">提出完了！</div>
-      <div className="done-sub">{nickname} さんの回答を受け付けました。<br/>お疲れ様でした！</div>
-      <button className="btn btn-ghost mt-16" onClick={()=>window.location.reload()}>トップに戻る</button>
+    <div className="answer-sheet-wrap">
+      <div className="done-page" style={{padding:'40px 24px'}}>
+        <div className="done-icon">🎉</div>
+        <div className="done-title">提出完了！</div>
+        <div className="done-sub">{nickname} さんの回答を受け付けました。<br/>お疲れ様でした！</div>
+      </div>
+      {/* 解説表示 */}
+      {(task.explanationText||task.explanationImageUrl)&&(
+        <div className="explanation-box">
+          <div className="explanation-title">💡 解説</div>
+          {task.explanationText&&<div className="explanation-text">{task.explanationText}</div>}
+          {task.explanationImageUrl&&<img src={task.explanationImageUrl} alt="解説画像" className="explanation-img"/>}
+        </div>
+      )}
+      <button className="btn btn-ghost btn-full" onClick={()=>window.location.reload()}>トップに戻る</button>
     </div>
   );
 
@@ -1217,36 +1426,24 @@ function AnswerSheet({ task, nickname, onSubmit }) {
     <div className="answer-sheet-wrap">
       <div className="sheet-header">
         <div className="sheet-title">{task.title}</div>
-        {task.description && <div className="sheet-desc">{task.description}</div>}
+        {task.description&&<div className="sheet-desc">{task.description}</div>}
         <div style={{marginTop:6,fontSize:13,opacity:.7}}>生徒：{nickname}</div>
       </div>
       <div className="sheet-canvas-wrapper">
-        {task.imageDataUrl ? (
+        {task.imageDataUrl?(
           <div className="sheet-canvas">
             <img src={task.imageDataUrl} alt="問題プリント" draggable={false}/>
-            {fields.map(f=>(
-              <div key={f.id} style={{position:'absolute',left:f.x+'%',top:f.y+'%',width:f.width+'%',height:f.height+'%'}}>
-                <input className="answer-input" type={f.type==='number'?'number':'text'} placeholder={f.label}
-                  value={answers[f.id]||''} onChange={e=>setAnswers(a=>({...a,[f.id]:e.target.value}))} disabled={submitted}/>
-              </div>
-            ))}
+            {fields.map(f=>(<div key={f.id} style={{position:'absolute',left:f.x+'%',top:f.y+'%',width:f.width+'%',height:f.height+'%'}}><input className="answer-input" type={f.type==='number'?'number':'text'} placeholder={f.label} value={answers[f.id]||''} onChange={e=>setAnswers(a=>({...a,[f.id]:e.target.value}))} disabled={submitted}/></div>))}
           </div>
-        ) : (
-          <div className="canvas-placeholder"><div className="big-icon">📄</div><p>プリント画像が添付されていません</p></div>
-        )}
+        ):(<div className="canvas-placeholder"><div className="big-icon">📄</div><p>プリント画像が添付されていません</p></div>)}
       </div>
-      {fields.length>0 && (
+      {fields.length>0&&(
         <div className="side-panel">
           <div className="side-panel-title">回答一覧（入力補助）</div>
           {fields.map((f,i)=>(
             <div key={f.id} className="form-group" style={{marginBottom:10}}>
-              <label className="form-label">{i+1}. {f.label}
-                <span className={`type-pill ${f.type==='number'?'type-number':'type-text'}`} style={{marginLeft:6}}>
-                  {f.type==='number'?'数値':'テキスト'}
-                </span>
-              </label>
-              <input className="form-input" type={f.type==='number'?'number':'text'} placeholder="回答を入力…"
-                value={answers[f.id]||''} onChange={e=>setAnswers(a=>({...a,[f.id]:e.target.value}))} disabled={submitted}/>
+              <label className="form-label">{i+1}. {f.label}<span className={`type-pill ${f.type==='number'?'type-number':'type-text'}`} style={{marginLeft:6}}>{f.type==='number'?'数値':'テキスト'}</span></label>
+              <input className="form-input" type={f.type==='number'?'number':'text'} placeholder="回答を入力…" value={answers[f.id]||''} onChange={e=>setAnswers(a=>({...a,[f.id]:e.target.value}))} disabled={submitted}/>
             </div>
           ))}
         </div>
@@ -1264,53 +1461,94 @@ function AnswerSheet({ task, nickname, onSubmit }) {
   );
 }
 
-/* ══════════════════════════════════════════
+/* ── 生徒：ホワイトボード視聴 ── */
+function WhiteboardViewer({ session, nickname }) {
+  const canvasRef=useRef(null); const [ended,setEnded]=useState(false);
+
+  useEffect(()=>{
+    if(!supabase||!session)return;
+    const canvas=canvasRef.current; if(!canvas)return;
+    canvas.width=900; canvas.height=600;
+
+    // リアルタイム購読
+    const channel=supabase.channel('wb_'+session.id)
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'whiteboard_strokes',filter:`session_id=eq.${session.id}`},
+        async(payload)=>{
+          const stroke=payload.new?.stroke_data;
+          if(!stroke)return;
+          if(stroke.type==='clear'){const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);return;}
+          if(stroke.type==='snapshot'){const img=new Image();img.onload=()=>{const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);};img.src=stroke.data;}
+        }
+      )
+      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'whiteboard_sessions',filter:`id=eq.${session.id}`},
+        (payload)=>{ if(!payload.new?.is_live)setEnded(true); }
+      )
+      .subscribe();
+
+    return()=>{supabase.removeChannel(channel);};
+  },[session]);
+
+  if(ended) return (
+    <div className="done-page">
+      <div className="done-icon">📺</div>
+      <div className="done-title">配信終了</div>
+      <div className="done-sub">先生が配信を終了しました。<br/>お疲れ様でした！</div>
+      <button className="btn btn-ghost mt-16" onClick={()=>window.location.reload()}>トップに戻る</button>
+    </div>
+  );
+
+  return (
+    <div style={{maxWidth:960,margin:'0 auto',padding:'20px 16px',display:'flex',flexDirection:'column',gap:16}}>
+      <div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+        <div className="live-badge"><span className="live-dot"/>LIVE 視聴中</div>
+        <div style={{fontFamily:'Noto Serif JP',fontSize:16,fontWeight:700,color:'var(--crimson-dk)'}}>先生のホワイトボード</div>
+        <div style={{marginLeft:'auto',fontSize:13,color:'var(--stone)'}}>👤 {nickname}</div>
+      </div>
+      <div style={{borderRadius:14,overflow:'hidden',boxShadow:'0 2px 12px var(--shadow)'}}>
+        <canvas ref={canvasRef} style={{width:'100%',display:'block',background:'white'}}/>
+      </div>
+      <div style={{fontSize:12,color:'var(--stone)',textAlign:'center'}}>先生が書いた内容がリアルタイムで表示されます</div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════
    ROOT APP
-══════════════════════════════════════════ */
+══════════════════════════════════ */
 function App() {
-  const toast = useToast();
+  const toast=useToast();
 
-  // ログイン状態をlocalStorageから復元
-  const savedSession = (() => {
-    try { return JSON.parse(localStorage.getItem('kogetsu_session') || 'null'); } catch { return null; }
-  })();
+  const savedSession=(()=>{try{return JSON.parse(localStorage.getItem('kogetsu_session')||'null');}catch{return null;}})();
+  const [role,setRole]=useState(savedSession?.role||null);
+  const [teacher,setTeacher]=useState(savedSession?.teacher||null);
+  const [view,setView]=useState('dashboard');
+  const [reviewTask,setReviewTask]=useState(null);
+  const [studentTask,setStudentTask]=useState(null);
+  const [studentNick,setStudentNick]=useState('');
+  const [liveSession,setLiveSession]=useState(null);
 
-  const [role,        setRole]        = useState(savedSession?.role || null);
-  const [teacher,     setTeacher]     = useState(savedSession?.teacher || null);
-  const [view,        setView]        = useState('dashboard');
-  const [reviewTask,  setReviewTask]  = useState(null);
-  const [studentTask, setStudentTask] = useState(null);
-  const [studentNick, setStudentNick] = useState('');
+  useEffect(()=>{
+    if(role==='teacher'&&teacher){localStorage.setItem('kogetsu_session',JSON.stringify({role,teacher}));}
+    else{localStorage.removeItem('kogetsu_session');}
+  },[role,teacher]);
 
-  // roleとteacherが変わったらlocalStorageに保存
-  useEffect(() => {
-    if (role === 'teacher' && teacher) {
-      localStorage.setItem('kogetsu_session', JSON.stringify({ role, teacher }));
-    } else {
-      localStorage.removeItem('kogetsu_session');
-    }
-  }, [role, teacher]);
+  const goHome=()=>{setRole(null);setStudentTask(null);setLiveSession(null);};
+  const handleLogout=()=>{localStorage.removeItem('kogetsu_session');setTeacher(null);setRole(null);setView('dashboard');};
 
-  const goHome = () => { setRole(null); setStudentTask(null); };
-
-  const handleLogout = () => {
-    localStorage.removeItem('kogetsu_session');
-    setTeacher(null); setRole(null); setView('dashboard');
+  const renderTeacher=()=>{
+    if(!teacher)return<TeacherAuth onLogin={u=>{setTeacher(u);setView('dashboard');}} toast={toast}/>;
+    if(view==='create')return<TaskCreator teacher={teacher} toast={toast} onDone={()=>setView('dashboard')}/>;
+    if(view==='review'&&reviewTask)return<SubmissionReviewer task={reviewTask} onBack={()=>setView('dashboard')}/>;
+    return<TeacherDashboard teacher={teacher} toast={toast} onCreate={()=>setView('create')} onReview={t=>{setReviewTask(t);setView('review');}} onLogout={handleLogout}/>;
   };
 
-  const renderTeacher = () => {
-    if(!teacher) return <TeacherAuth onLogin={u=>{setTeacher(u);setView('dashboard');}} toast={toast}/>;
-    if(view==='create') return <TaskCreator teacher={teacher} toast={toast} onDone={()=>setView('dashboard')}/>;
-    if(view==='review'&&reviewTask) return <SubmissionReviewer task={reviewTask} onBack={()=>setView('dashboard')}/>;
-    return <TeacherDashboard teacher={teacher} toast={toast} onCreate={()=>setView('create')} onReview={t=>{setReviewTask(t);setView('review');}} onLogout={handleLogout}/>;
+  const renderStudent=()=>{
+    if(liveSession)return<WhiteboardViewer session={liveSession} nickname={studentNick}/>;
+    if(studentTask)return<div className="main"><AnswerSheet task={studentTask} nickname={studentNick} onSubmit={()=>{}}/></div>;
+    return<StudentCodeEntry toast={toast} onEnter={(task,nick)=>{setStudentTask(task);setStudentNick(nick);}} onWatchLive={(session,nick)=>{setLiveSession(session);setStudentNick(nick);}}/>;
   };
 
-  const renderStudent = () => {
-    if(studentTask) return <div className="main"><AnswerSheet task={studentTask} nickname={studentNick} onSubmit={()=>{}}/></div>;
-    return <StudentCodeEntry toast={toast} onEnter={(task,nick)=>{setStudentTask(task);setStudentNick(nick);}}/>;
-  };
-
-  if(!role) return (
+  if(!role)return(
     <div className="app">
       <Header role={null} onRoleChange={setRole} onHome={goHome}/>
       <div className="landing">
@@ -1318,28 +1556,18 @@ function App() {
         <div className="landing-title">紅月計算塾</div>
         <div className="landing-subtitle">学習支援ボランティアのための<br/>デジタル課題プラットフォーム</div>
         <div className="landing-cards">
-          <div className="landing-card" onClick={()=>setRole('teacher')}>
-            <div className="card-icon teacher">📚</div>
-            <div className="card-label">教える側</div>
-            <div className="card-desc">問題プリントをアップロードし、回答欄を配置して課題を作成・管理します。</div>
-            <div className="card-cta">ログインして始める →</div>
-          </div>
-          <div className="landing-card" onClick={()=>setRole('student')}>
-            <div className="card-icon student">✏️</div>
-            <div className="card-label">生徒</div>
-            <div className="card-desc">課題コードを入力して、プリントに回答し提出します。スマホ・PCどちらでも。</div>
-            <div className="card-cta">課題を開く →</div>
-          </div>
+          <div className="landing-card" onClick={()=>setRole('teacher')}><div className="card-icon teacher">📚</div><div className="card-label">教える側</div><div className="card-desc">問題プリントをアップロードし、課題の作成・採点・板書配信ができます。</div><div className="card-cta">ログインして始める →</div></div>
+          <div className="landing-card" onClick={()=>setRole('student')}><div className="card-icon student">✏️</div><div className="card-label">生徒</div><div className="card-desc">課題コードで回答提出、またはLIVEコードで先生の板書をリアルタイム視聴。</div><div className="card-cta">コードを入力して開く →</div></div>
         </div>
       </div>
       <Toasts toasts={toast.toasts}/>
     </div>
   );
 
-  return (
+  return(
     <div className="app">
-      <Header role={role} onRoleChange={r=>{setRole(r);setStudentTask(null);setTeacher(null);setView('dashboard');}} onHome={goHome}/>
-      {role==='teacher' ? renderTeacher() : renderStudent()}
+      <Header role={role} onRoleChange={r=>{setRole(r);setStudentTask(null);setTeacher(null);setView('dashboard');setLiveSession(null);}} onHome={goHome}/>
+      {role==='teacher'?renderTeacher():renderStudent()}
       <Toasts toasts={toast.toasts}/>
     </div>
   );
