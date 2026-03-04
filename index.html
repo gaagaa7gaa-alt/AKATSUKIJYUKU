@@ -590,8 +590,8 @@ function TeacherRegister({ onDone, toast }) {
 /* ══════════════════════════════════
    教師ダッシュボード（タブ付き）
 ══════════════════════════════════ */
-function TeacherDashboard({ teacher, onCreate, onReview, toast, onLogout }) {
-  const [activeTab, setActiveTab] = useState('tasks'); // tasks | scoring | whiteboard
+function TeacherDashboard({ teacher, onCreate, onEdit, onReview, toast, onLogout }) {
+  const [activeTab, setActiveTab] = useState('tasks');
 
   return (
     <div className="main">
@@ -609,15 +609,15 @@ function TeacherDashboard({ teacher, onCreate, onReview, toast, onLogout }) {
         <button className={`dash-tab ${activeTab==='whiteboard'?'active':''}`} onClick={()=>setActiveTab('whiteboard')}>🖊 ホワイトボード</button>
       </div>
 
-      {activeTab==='tasks'    && <TasksTab teacher={teacher} onCreate={onCreate} onReview={onReview} toast={toast}/>}
-      {activeTab==='scoring'  && <ScoringTab teacher={teacher} toast={toast}/>}
+      {activeTab==='tasks'      && <TasksTab teacher={teacher} onCreate={onCreate} onEdit={onEdit} onReview={onReview} toast={toast}/>}
+      {activeTab==='scoring'    && <ScoringTab teacher={teacher} toast={toast}/>}
       {activeTab==='whiteboard' && <WhiteboardTab teacher={teacher} toast={toast}/>}
     </div>
   );
 }
 
 /* ── 課題管理タブ ── */
-function TasksTab({ teacher, onCreate, onReview, toast }) {
+function TasksTab({ teacher, onCreate, onEdit, onReview, toast }) {
   const [tasks,setTasks]=useState([]); const [loading,setLoading]=useState(true); const [subCounts,setSubCounts]=useState({}); const [filter,setFilter]=useState('all'); const [showApprovals,setShowApprovals]=useState(false); const [applications,setApplications]=useState([]); const [appVotes,setAppVotes]=useState({}); const [teachers,setTeachers]=useState([]); const [appLoading,setAppLoading]=useState(false);
 
   const load = useCallback(async () => {
@@ -727,6 +727,7 @@ function TasksTab({ teacher, onCreate, onReview, toast }) {
               <div className="task-card-meta">回答欄 {(task.answerFields||[]).length} 個 ・ 提出 {subCounts[task.id]||0} 件</div>
               <div className="task-card-actions">
                 <button className="btn btn-sm btn-secondary" onClick={()=>togglePublish(task)}>{task.isPublished?'非公開にする':'公開する'}</button>
+                <button className="btn btn-sm btn-ghost" onClick={()=>onEdit(task)}>✏️ 編集</button>
                 <button className="btn btn-sm btn-ghost" onClick={()=>onReview(task)}>回答確認</button>
                 <button className="btn btn-sm btn-ghost" style={{color:'var(--crimson)'}} onClick={()=>deleteTask(task)}>削除</button>
               </div>
@@ -958,161 +959,180 @@ function ScoringTab({ teacher, toast }) {
   );
 }
 
-/* ── ホワイトボードタブ（教師） ── */
+/* ══════════════════════════════════
+   ホワイトボード（Supabase Broadcast）
+   DBへのストローク保存なし
+   supabase.channel Broadcast で直送
+══════════════════════════════════ */
 function WhiteboardTab({ teacher, toast }) {
-  const [tasks,setTasks]       = useState([]);
-  const [isLive,setIsLive]     = useState(false);
+  const [tasks,setTasks]             = useState([]);
+  const [isLive,setIsLive]           = useState(false);
   const [sessionCode,setSessionCode] = useState('');
   const [selTaskId,setSelTaskId]     = useState('');
+  const [selTask,setSelTask]         = useState(null);
   const [showStart,setShowStart]     = useState(false);
-  const [tool,setTool]         = useState('pen');
-  const [color,setColor]       = useState('#1A1410');
-  const [lineWidth,setLineWidth] = useState(3);
-  // undo: array of dataURL snapshots
-  const [undoStack,setUndoStack] = useState([]);
+  const [tool,setTool]               = useState('pen');
+  const [color,setColor]             = useState('#1A1410');
+  const [lineWidth,setLineWidth]     = useState(3);
+  const [undoStack,setUndoStack]     = useState([]);
 
-  // Use refs so event handlers always see latest values
+  /* refs – event handlers always read latest values */
   const canvasRef    = useRef(null);
-  const sessionIdRef = useRef(null);   // ← FIX: ref instead of state for broadcast
+  const channelRef   = useRef(null);
+  const sessionIdRef = useRef(null);
   const isLiveRef    = useRef(false);
   const toolRef      = useRef('pen');
   const colorRef     = useRef('#1A1410');
-  const lineWidthRef = useRef(3);
+  const lwRef        = useRef(3);
   const drawing      = useRef(false);
   const startPos     = useRef({x:0,y:0});
-  const strokeSnap   = useRef(null);   // snapshot before each stroke (for live preview)
+  const strokeSnap   = useRef(null);
 
   useEffect(()=>{ DB.getTasks().then(setTasks).catch(()=>{}); },[]);
 
-  // Keep refs in sync with state
-  useEffect(()=>{ isLiveRef.current   = isLive;  },[isLive]);
-  useEffect(()=>{ toolRef.current     = tool;    },[tool]);
-  useEffect(()=>{ colorRef.current    = color;   },[color]);
-  useEffect(()=>{ lineWidthRef.current= lineWidth;},[lineWidth]);
+  /* sync refs */
+  useEffect(()=>{ isLiveRef.current = isLive; },  [isLive]);
+  useEffect(()=>{ toolRef.current   = tool; },    [tool]);
+  useEffect(()=>{ colorRef.current  = color; },   [color]);
+  useEffect(()=>{ lwRef.current     = lineWidth; },[lineWidth]);
 
-  /* ── broadcast: always reads from ref ── */
-  const broadcast = async (strokeData) => {
-    const sid = sessionIdRef.current;
-    if (!supabase || !sid) return;
-    try {
-      await supabase.from('whiteboard_strokes').insert([{
-        id: genId(), session_id: sid,
-        stroke_data: strokeData,
-        created_at: new Date().toISOString()
-      }]);
-    } catch(e) { console.error('broadcast error', e); }
-  };
+  /* canvas size */
+  useEffect(()=>{
+    const c=canvasRef.current; if(!c)return;
+    c.width=900; c.height=600;
+  },[]);
 
-  /* ── session control ── */
-  const startLive = async () => {
-    const code = genCode();
-    const id   = genId();
-    try {
-      await DB.createWbSession({ id, access_code:code, task_id:selTaskId||null, is_live:true, created_by:teacher.teacherId, created_at:new Date().toISOString() });
-      sessionIdRef.current = id;
-      setSessionCode(code);
-      setIsLive(true);
-      setShowStart(false);
-      setUndoStack([]);
-      toast.show('配信開始！コード: '+code, 'success');
-    } catch(e) { toast.show('配信開始エラー: '+e.message, 'error'); }
-  };
+  /* 課題選択 → selTask */
+  useEffect(()=>{
+    if(!selTaskId){ setSelTask(null); return; }
+    setSelTask(tasks.find(t=>t.id===selTaskId)||null);
+  },[selTaskId,tasks]);
 
-  const stopLive = async () => {
-    const sid = sessionIdRef.current;
-    if (sid) {
-      try {
-        // まずストロークを全削除してからセッションを終了
-        await DB.clearWbStrokes(sid);
-        await DB.endWbSession(sid);
-      } catch(e) { console.error('stopLive error', e); }
+  /* 背景画像描画（薄く） */
+  useEffect(()=>{
+    const c=canvasRef.current; if(!c)return;
+    const ctx=c.getContext('2d');
+    ctx.clearRect(0,0,c.width,c.height);
+    if(selTask?.imageDataUrl){
+      const img=new Image();
+      img.onload=()=>{
+        ctx.globalAlpha=0.25;
+        ctx.drawImage(img,0,0,c.width,c.height);
+        ctx.globalAlpha=1.0;
+      };
+      img.src=selTask.imageDataUrl;
     }
-    sessionIdRef.current = null;
-    setIsLive(false);
-    setSessionCode('');
-    setUndoStack([]);
-    const canvas = canvasRef.current;
-    if (canvas) { const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height); }
+  },[selTask]);
+
+  /* broadcast helper */
+  const broadcast=(event,payload)=>{
+    const ch=channelRef.current;
+    if(!ch)return;
+    ch.send({type:'broadcast',event,payload});
+  };
+
+  /* 配信開始 */
+  const startLive=async()=>{
+    if(!supabase){ toast.show('Supabase未設定','error'); return; }
+    const code=genCode();
+    const id=genId();
+    try{
+      await DB.createWbSession({id,access_code:code,task_id:selTaskId||null,is_live:true,created_by:teacher.teacherId,created_at:new Date().toISOString()});
+    }catch(e){ toast.show('配信開始エラー: '+e.message,'error'); return; }
+
+    sessionIdRef.current=id;
+
+    const ch=supabase.channel('wb:'+code,{config:{broadcast:{self:false}}});
+    ch.subscribe(status=>{
+      if(status==='SUBSCRIBED'){
+        channelRef.current=ch;
+        setSessionCode(code);
+        setIsLive(true);
+        setShowStart(false);
+        setUndoStack([]);
+        toast.show('配信開始！コード: '+code,'success');
+      }
+    });
+  };
+
+  /* 配信終了 */
+  const stopLive=async()=>{
+    broadcast('end',{});
+    const ch=channelRef.current;
+    if(ch){ supabase.removeChannel(ch); channelRef.current=null; }
+    const sid=sessionIdRef.current;
+    if(sid){
+      try{ await DB.clearWbStrokes(sid); await DB.endWbSession(sid); }catch(e){}
+    }
+    sessionIdRef.current=null;
+    setIsLive(false); setSessionCode(''); setUndoStack([]);
+    const c=canvasRef.current;
+    if(c){ const ctx=c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height); }
     toast.show('配信を終了しました');
   };
 
-  const clearCanvas = async () => {
-    const canvas=canvasRef.current; if(!canvas)return;
-    const ctx=canvas.getContext('2d');
-    // undoに現状を積んでからクリア
-    setUndoStack(s=>[...s, canvas.toDataURL('image/png')]);
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    const sid=sessionIdRef.current;
-    if (sid) await DB.clearWbStrokes(sid);
-    await broadcast({type:'clear'});
+  /* クリア */
+  const clearCanvas=()=>{
+    const c=canvasRef.current; if(!c)return;
+    setUndoStack(s=>[...s,c.toDataURL('image/png')]);
+    const ctx=c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height);
+    broadcast('clear',{});
   };
 
-  /* ── undo ── */
-  const undo = async () => {
-    if (undoStack.length===0) return;
-    const prev = undoStack[undoStack.length-1];
+  /* やり直し */
+  const undo=()=>{
+    if(!undoStack.length)return;
+    const prev=undoStack[undoStack.length-1];
     setUndoStack(s=>s.slice(0,-1));
-    const canvas=canvasRef.current; if(!canvas)return;
-    const ctx=canvas.getContext('2d');
-    if (prev==='__empty__') {
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      await broadcast({type:'clear'});
-    } else {
+    const c=canvasRef.current; if(!c)return;
+    const ctx=c.getContext('2d');
+    ctx.clearRect(0,0,c.width,c.height);
+    if(prev){
       const img=new Image();
-      img.onload=async()=>{
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-        ctx.drawImage(img,0,0);
-        await broadcast({type:'snapshot', data:canvas.toDataURL('image/png')});
-      };
+      img.onload=()=>{ ctx.drawImage(img,0,0); broadcast('snapshot',{data:c.toDataURL('image/png')}); };
       img.src=prev;
+    } else {
+      broadcast('clear',{});
     }
   };
 
-  /* ── canvas size ── */
-  useEffect(()=>{
-    const canvas=canvasRef.current; if(!canvas)return;
-    canvas.width=900; canvas.height=600;
-  },[]);
-
-  /* ── pointer helpers ── */
-  const getPos = (e,canvas) => {
-    const rect=canvas.getBoundingClientRect();
-    const scaleX=canvas.width/rect.width, scaleY=canvas.height/rect.height;
+  /* pointer helpers */
+  const getPos=(e,c)=>{
+    const r=c.getBoundingClientRect();
+    const sx=c.width/r.width, sy=c.height/r.height;
     const src=e.touches?e.touches[0]:e;
-    return {x:(src.clientX-rect.left)*scaleX, y:(src.clientY-rect.top)*scaleY};
+    return {x:(src.clientX-r.left)*sx, y:(src.clientY-r.top)*sy};
   };
 
-  const onDown = (e) => {
-    if (!isLiveRef.current) return;
+  const onDown=(e)=>{
+    if(!isLiveRef.current)return;
     e.preventDefault();
-    const canvas=canvasRef.current; const ctx=canvas.getContext('2d');
-    const pos=getPos(e,canvas);
-    // Save undo snapshot before stroke begins
-    setUndoStack(s=>[...s, canvas.toDataURL('image/png')]);
-    drawing.current=true;
-    startPos.current=pos;
-    strokeSnap.current=ctx.getImageData(0,0,canvas.width,canvas.height);
-    if (toolRef.current==='pen') { ctx.beginPath(); ctx.moveTo(pos.x,pos.y); }
+    const c=canvasRef.current; const ctx=c.getContext('2d');
+    const pos=getPos(e,c);
+    setUndoStack(s=>[...s,c.toDataURL('image/png')]);
+    drawing.current=true; startPos.current=pos;
+    strokeSnap.current=ctx.getImageData(0,0,c.width,c.height);
+    if(toolRef.current==='pen'){ ctx.beginPath(); ctx.moveTo(pos.x,pos.y); }
   };
 
-  const onMove = (e) => {
-    if (!drawing.current || !isLiveRef.current) return;
+  const onMove=(e)=>{
+    if(!drawing.current||!isLiveRef.current)return;
     e.preventDefault();
-    const canvas=canvasRef.current; const ctx=canvas.getContext('2d');
-    const pos=getPos(e,canvas);
-    ctx.strokeStyle=colorRef.current;
-    ctx.lineWidth=lineWidthRef.current;
+    const c=canvasRef.current; const ctx=c.getContext('2d');
+    const pos=getPos(e,c);
+    ctx.strokeStyle=colorRef.current; ctx.lineWidth=lwRef.current;
     ctx.lineCap='round'; ctx.lineJoin='round';
-    if (toolRef.current==='pen') {
+    if(toolRef.current==='pen'){
       ctx.lineTo(pos.x,pos.y); ctx.stroke();
     } else {
       ctx.putImageData(strokeSnap.current,0,0);
       ctx.beginPath();
-      if (toolRef.current==='line') {
+      if(toolRef.current==='line'){
         ctx.moveTo(startPos.current.x,startPos.current.y);
         ctx.lineTo(pos.x,pos.y); ctx.stroke();
-      } else if (toolRef.current==='circle') {
-        const rx=Math.abs(pos.x-startPos.current.x)/2, ry=Math.abs(pos.y-startPos.current.y)/2;
+      } else {
+        const rx=Math.abs(pos.x-startPos.current.x)/2;
+        const ry=Math.abs(pos.y-startPos.current.y)/2;
         const cx=startPos.current.x+(pos.x-startPos.current.x)/2;
         const cy=startPos.current.y+(pos.y-startPos.current.y)/2;
         ctx.ellipse(cx,cy,Math.max(1,rx),Math.max(1,ry),0,0,2*Math.PI); ctx.stroke();
@@ -1120,40 +1140,35 @@ function WhiteboardTab({ teacher, toast }) {
     }
   };
 
-  const onUp = async (e) => {
-    if (!drawing.current || !isLiveRef.current) return;
-    if (e.type!=='touchend') e.preventDefault();
+  const onUp=(e)=>{
+    if(!drawing.current||!isLiveRef.current)return;
+    if(e.type!=='touchend') e.preventDefault();
     drawing.current=false;
-    const canvas=canvasRef.current;
-    const dataUrl=canvas.toDataURL('image/png');
-    await broadcast({type:'snapshot', data:dataUrl});
+    const c=canvasRef.current;
+    broadcast('snapshot',{data:c.toDataURL('image/png')});
   };
 
   const colors=['#1A1410','#9B1B30','#C9972C','#1E40AF','#065F46','#7C3AED','#FFFFFF'];
 
   return (
     <div className="wb-wrap">
-      {/* トップバー */}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:10,marginBottom:8}}>
         <div className="dashboard-title">🖊 ホワイトボード</div>
         <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
-          {isLive&&(
-            <>
-              <div className="live-badge"><span className="live-dot"/>LIVE</div>
-              <div style={{fontFamily:'DM Mono',fontSize:18,fontWeight:700,color:'var(--crimson)',letterSpacing:'.1em',background:'rgba(155,27,48,.07)',padding:'4px 12px',borderRadius:8}}>{sessionCode}</div>
-              <button className="btn btn-ghost btn-sm" onClick={undo} disabled={undoStack.length===0} title="やり直し (Ctrl+Z)">↩ やり直し</button>
-              <button className="btn btn-ghost btn-sm" onClick={clearCanvas}>🗑 クリア</button>
-              <button className="btn btn-reject btn-sm" onClick={stopLive}>⏹ 配信終了</button>
-            </>
-          )}
+          {isLive&&(<>
+            <div className="live-badge"><span className="live-dot"/>LIVE</div>
+            <div style={{fontFamily:'DM Mono',fontSize:18,fontWeight:700,color:'var(--crimson)',letterSpacing:'.1em',background:'rgba(155,27,48,.07)',padding:'4px 12px',borderRadius:8}}>{sessionCode}</div>
+            <button className="btn btn-ghost btn-sm" onClick={undo} disabled={!undoStack.length}>↩ やり直し</button>
+            <button className="btn btn-ghost btn-sm" onClick={clearCanvas}>🗑 クリア</button>
+            <button className="btn btn-reject btn-sm" onClick={stopLive}>⏹ 配信終了</button>
+          </>)}
           {!isLive&&<button className="btn btn-live" onClick={()=>setShowStart(true)}>▶ 配信開始</button>}
         </div>
       </div>
 
-      {/* ツールバー */}
       <div className="wb-toolbar">
         <span style={{fontSize:12,fontWeight:700,color:'var(--stone)'}}>ツール：</span>
-        {[['pen','✏️','フリー線'],['line','📏','直線'],['circle','⭕','楕円']].map(([t,icon,label])=>(
+        {[['pen','✏️','フリー'],['line','📏','直線'],['circle','⭕','楕円']].map(([t,icon,label])=>(
           <button key={t} className={`wb-tool-btn ${tool===t?'active':''}`} title={label} onClick={()=>setTool(t)}>{icon}</button>
         ))}
         <div style={{width:1,height:24,background:'var(--stone-lt)',margin:'0 4px'}}/>
@@ -1171,14 +1186,13 @@ function WhiteboardTab({ teacher, toast }) {
         ))}
       </div>
 
-      {/* キャンバス */}
       <div style={{position:'relative',borderRadius:14,overflow:'hidden',boxShadow:'0 2px 12px var(--shadow)'}}>
         <canvas ref={canvasRef} className="wb-canvas"
           style={{width:'100%',cursor:isLive?'crosshair':'not-allowed',opacity:isLive?1:.6}}
           onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
           onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}/>
         {!isLive&&(
-          <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(249,244,237,.7)'}}>
+          <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(249,244,237,.75)'}}>
             <div style={{textAlign:'center'}}>
               <div style={{fontSize:48,marginBottom:12}}>🖊</div>
               <div style={{fontFamily:'Noto Serif JP',fontSize:16,fontWeight:700,color:'var(--stone)'}}>「配信開始」を押すと描けるようになります</div>
@@ -1186,11 +1200,8 @@ function WhiteboardTab({ teacher, toast }) {
           </div>
         )}
       </div>
-      <div style={{fontSize:12,color:'var(--stone)'}}>
-        配信中、生徒がコードを入力するとリアルタイムで板書が見られます
-      </div>
+      <div style={{fontSize:12,color:'var(--stone)'}}>配信中、生徒がLIVEコードを入力するとリアルタイムで板書が見られます</div>
 
-      {/* 配信開始モーダル */}
       {showStart&&(
         <div className="modal-overlay" onClick={()=>setShowStart(false)}>
           <div className="modal" onClick={e=>e.stopPropagation()}>
@@ -1201,11 +1212,14 @@ function WhiteboardTab({ teacher, toast }) {
                 <option value="">── 白紙ボード ──</option>
                 {tasks.map(t=><option key={t.id} value={t.id}>{t.title}</option>)}
               </select>
-              <div className="form-hint">選択した課題のプリント画像が背景に表示されます</div>
+              <div className="form-hint">選択した課題のプリントが薄く背景に表示されます</div>
             </div>
+            {selTask?.imageDataUrl&&(
+              <img src={selTask.imageDataUrl} alt="プレビュー"
+                style={{width:'100%',borderRadius:8,border:'2px solid var(--paper-dk)',marginBottom:12,maxHeight:140,objectFit:'contain',background:'#f5f5f5'}}/>
+            )}
             <div style={{background:'var(--paper)',borderRadius:10,padding:14,fontSize:13,color:'var(--stone)',lineHeight:1.8}}>
-              配信するとLIVEコードが発行されます。<br/>
-              生徒はそのコードを入力すると板書をリアルタイムで視聴できます。
+              配信するとLIVEコードが発行されます。生徒はそのコードを入力すると板書をリアルタイムで視聴できます。
             </div>
             <div className="modal-actions">
               <button className="btn btn-ghost" onClick={()=>setShowStart(false)}>キャンセル</button>
@@ -1218,6 +1232,65 @@ function WhiteboardTab({ teacher, toast }) {
   );
 }
 
+/* ── 生徒：ホワイトボード視聴（Broadcast版） ── */
+function WhiteboardViewer({ session, nickname }) {
+  const canvasRef=useRef(null);
+  const [ended,setEnded]=useState(false);
+
+  useEffect(()=>{
+    if(!supabase||!session)return;
+    const c=canvasRef.current; if(!c)return;
+    c.width=900; c.height=600;
+
+    /* Broadcastチャンネルを購読 – DBのReplication設定不要 */
+    const ch=supabase.channel('wb:'+session.access_code,{
+      config:{broadcast:{self:false}}
+    })
+    .on('broadcast',{event:'snapshot'},msg=>{
+      const data=msg.payload?.data; if(!data)return;
+      const img=new Image();
+      img.onload=()=>{
+        const ctx=c.getContext('2d');
+        ctx.clearRect(0,0,c.width,c.height);
+        ctx.drawImage(img,0,0,c.width,c.height);
+      };
+      img.src=data;
+    })
+    .on('broadcast',{event:'clear'},()=>{
+      const ctx=c.getContext('2d');
+      ctx.clearRect(0,0,c.width,c.height);
+    })
+    .on('broadcast',{event:'end'},()=>{
+      setEnded(true);
+    })
+    .subscribe();
+
+    return()=>{ supabase.removeChannel(ch); };
+  },[session]);
+
+  if(ended)return(
+    <div className="done-page">
+      <div className="done-icon">📺</div>
+      <div className="done-title">配信終了</div>
+      <div className="done-sub">先生が配信を終了しました。<br/>お疲れ様でした！</div>
+      <button className="btn btn-ghost mt-16" onClick={()=>window.location.reload()}>トップに戻る</button>
+    </div>
+  );
+
+  return(
+    <div style={{maxWidth:960,margin:'0 auto',padding:'20px 16px',display:'flex',flexDirection:'column',gap:16}}>
+      <div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+        <div className="live-badge"><span className="live-dot"/>LIVE 視聴中</div>
+        <div style={{fontFamily:'Noto Serif JP',fontSize:16,fontWeight:700,color:'var(--crimson-dk)'}}>先生のホワイトボード</div>
+        <div style={{marginLeft:'auto',fontSize:13,color:'var(--stone)'}}>👤 {nickname}</div>
+      </div>
+      <div style={{borderRadius:14,overflow:'hidden',boxShadow:'0 2px 12px var(--shadow)'}}>
+        <canvas ref={canvasRef} style={{width:'100%',display:'block',background:'white'}}/>
+      </div>
+      <div style={{fontSize:12,color:'var(--stone)',textAlign:'center'}}>先生が書いた内容がリアルタイムで表示されます</div>
+    </div>
+  );
+}
 
 /* ══════════════════════════════════
    課題作成
@@ -1536,53 +1609,77 @@ function AnswerSheet({ task, nickname, onSubmit }) {
   );
 }
 
-/* ── 生徒：ホワイトボード視聴 ── */
-function WhiteboardViewer({ session, nickname }) {
-  const canvasRef=useRef(null); const [ended,setEnded]=useState(false);
+/* ══════════════════════════════════
+   課題編集
+══════════════════════════════════ */
+function TaskEditor({ task, onDone, toast }) {
+  const [title,setTitle]     = useState(task.title||'');
+  const [desc,setDesc]       = useState(task.description||'');
+  const [expText,setExpText] = useState(task.explanationText||'');
+  const [expImg,setExpImg]   = useState(task.explanationImageUrl||null);
+  const [saving,setSaving]   = useState(false);
+  const expImgRef=useRef(null);
 
-  useEffect(()=>{
-    if(!supabase||!session)return;
-    const canvas=canvasRef.current; if(!canvas)return;
-    canvas.width=900; canvas.height=600;
+  const handleExpImg=(file)=>{
+    if(!file)return;
+    const r=new FileReader();
+    r.onload=ev=>setExpImg(ev.target.result);
+    r.readAsDataURL(file);
+  };
 
-    // リアルタイム購読
-    const channel=supabase.channel('wb_'+session.id)
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'whiteboard_strokes',filter:`session_id=eq.${session.id}`},
-        async(payload)=>{
-          const stroke=payload.new?.stroke_data;
-          if(!stroke)return;
-          if(stroke.type==='clear'){const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);return;}
-          if(stroke.type==='snapshot'){const img=new Image();img.onload=()=>{const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);};img.src=stroke.data;}
-        }
-      )
-      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'whiteboard_sessions',filter:`id=eq.${session.id}`},
-        (payload)=>{ if(!payload.new?.is_live)setEnded(true); }
-      )
-      .subscribe();
+  const save=async()=>{
+    if(!title.trim()){toast.show('タイトルを入力してください','error');return;}
+    setSaving(true);
+    try{
+      await DB.updateTask(task.id,{title:title.trim(),description:desc.trim(),explanationText:expText.trim(),explanationImageUrl:expImg});
+      toast.show('課題を更新しました','success');
+      onDone();
+    }catch(e){toast.show('更新エラー: '+e.message,'error');}
+    finally{setSaving(false);}
+  };
 
-    return()=>{supabase.removeChannel(channel);};
-  },[session]);
-
-  if(ended) return (
-    <div className="done-page">
-      <div className="done-icon">📺</div>
-      <div className="done-title">配信終了</div>
-      <div className="done-sub">先生が配信を終了しました。<br/>お疲れ様でした！</div>
-      <button className="btn btn-ghost mt-16" onClick={()=>window.location.reload()}>トップに戻る</button>
-    </div>
-  );
-
-  return (
-    <div style={{maxWidth:960,margin:'0 auto',padding:'20px 16px',display:'flex',flexDirection:'column',gap:16}}>
-      <div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
-        <div className="live-badge"><span className="live-dot"/>LIVE 視聴中</div>
-        <div style={{fontFamily:'Noto Serif JP',fontSize:16,fontWeight:700,color:'var(--crimson-dk)'}}>先生のホワイトボード</div>
-        <div style={{marginLeft:'auto',fontSize:13,color:'var(--stone)'}}>👤 {nickname}</div>
+  return(
+    <div className="main">
+      <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:24}}>
+        <button className="btn btn-ghost btn-sm" onClick={onDone}>← 戻る</button>
+        <div style={{fontFamily:'Noto Serif JP',fontSize:22,fontWeight:700,color:'var(--crimson-dk)'}}>✏️ 課題を編集</div>
       </div>
-      <div style={{borderRadius:14,overflow:'hidden',boxShadow:'0 2px 12px var(--shadow)'}}>
-        <canvas ref={canvasRef} style={{width:'100%',display:'block',background:'white'}}/>
+      <div className="form-box" style={{maxWidth:640}}>
+        <div className="form-group">
+          <label className="form-label">課題タイトル <span style={{color:'var(--crimson)'}}>*</span></label>
+          <input className="form-input" value={title} onChange={e=>setTitle(e.target.value)}/>
+        </div>
+        <div className="form-group">
+          <label className="form-label">説明（任意）</label>
+          <textarea className="form-textarea" value={desc} onChange={e=>setDesc(e.target.value)}/>
+        </div>
+        <div className="divider"/>
+        <div style={{fontFamily:'Noto Serif JP',fontSize:15,fontWeight:700,color:'var(--gold)',marginBottom:14}}>💡 解説の編集</div>
+        <div className="form-group">
+          <label className="form-label">解説テキスト</label>
+          <textarea className="form-textarea" style={{minHeight:120}} placeholder="例：両辺に3をかけて…" value={expText} onChange={e=>setExpText(e.target.value)}/>
+        </div>
+        <div className="form-group">
+          <label className="form-label">解説画像</label>
+          {expImg?(
+            <div style={{position:'relative'}}>
+              <img src={expImg} alt="解説" style={{width:'100%',borderRadius:8,border:'2px solid var(--paper-dk)'}}/>
+              <button className="btn btn-ghost btn-sm" style={{position:'absolute',top:8,right:8,color:'var(--crimson)'}} onClick={()=>setExpImg(null)}>✕ 削除</button>
+            </div>
+          ):(
+            <div className="upload-zone" onClick={()=>expImgRef.current.click()} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();handleExpImg(e.dataTransfer.files?.[0]);}}>
+              <div className="big">🖼</div><p>解説画像をアップロード（PNG/JPG）</p>
+              <input ref={expImgRef} type="file" accept="image/*" style={{display:'none'}} onChange={e=>handleExpImg(e.target.files?.[0])}/>
+            </div>
+          )}
+        </div>
+        <div style={{background:'#FEF3C7',border:'1.5px solid #F59E0B',borderRadius:10,padding:12,fontSize:12,color:'#92400E',marginBottom:18}}>
+          ⚠️ 回答欄の配置・プリスト画像は変更できません。再作成が必要な場合は削除してください。
+        </div>
+        <button className="btn btn-primary btn-full btn-lg" disabled={saving} onClick={save}>
+          {saving?<><span className="spinner"/> 保存中…</>:'💾 変更を保存'}
+        </button>
       </div>
-      <div style={{fontSize:12,color:'var(--stone)',textAlign:'center'}}>先生が書いた内容がリアルタイムで表示されます</div>
     </div>
   );
 }
@@ -1592,35 +1689,42 @@ function WhiteboardViewer({ session, nickname }) {
 ══════════════════════════════════ */
 function App() {
   const toast=useToast();
-
   const savedSession=(()=>{try{return JSON.parse(localStorage.getItem('kogetsu_session')||'null');}catch{return null;}})();
-  const [role,setRole]=useState(savedSession?.role||null);
-  const [teacher,setTeacher]=useState(savedSession?.teacher||null);
-  const [view,setView]=useState('dashboard');
-  const [reviewTask,setReviewTask]=useState(null);
-  const [studentTask,setStudentTask]=useState(null);
-  const [studentNick,setStudentNick]=useState('');
-  const [liveSession,setLiveSession]=useState(null);
+  const [role,setRole]             = useState(savedSession?.role||null);
+  const [teacher,setTeacher]       = useState(savedSession?.teacher||null);
+  const [view,setView]             = useState('dashboard');
+  const [reviewTask,setReviewTask] = useState(null);
+  const [editTask,setEditTask]     = useState(null);
+  const [studentTask,setStudentTask] = useState(null);
+  const [studentNick,setStudentNick] = useState('');
+  const [liveSession,setLiveSession] = useState(null);
 
   useEffect(()=>{
-    if(role==='teacher'&&teacher){localStorage.setItem('kogetsu_session',JSON.stringify({role,teacher}));}
-    else{localStorage.removeItem('kogetsu_session');}
+    if(role==='teacher'&&teacher){ localStorage.setItem('kogetsu_session',JSON.stringify({role,teacher})); }
+    else{ localStorage.removeItem('kogetsu_session'); }
   },[role,teacher]);
 
-  const goHome=()=>{setRole(null);setStudentTask(null);setLiveSession(null);};
-  const handleLogout=()=>{localStorage.removeItem('kogetsu_session');setTeacher(null);setRole(null);setView('dashboard');};
+  const goHome=()=>{ setRole(null); setStudentTask(null); setLiveSession(null); };
+  const handleLogout=()=>{ localStorage.removeItem('kogetsu_session'); setTeacher(null); setRole(null); setView('dashboard'); };
 
   const renderTeacher=()=>{
-    if(!teacher)return<TeacherAuth onLogin={u=>{setTeacher(u);setView('dashboard');}} toast={toast}/>;
-    if(view==='create')return<TaskCreator teacher={teacher} toast={toast} onDone={()=>setView('dashboard')}/>;
-    if(view==='review'&&reviewTask)return<SubmissionReviewer task={reviewTask} onBack={()=>setView('dashboard')}/>;
-    return<TeacherDashboard teacher={teacher} toast={toast} onCreate={()=>setView('create')} onReview={t=>{setReviewTask(t);setView('review');}} onLogout={handleLogout}/>;
+    if(!teacher) return <TeacherAuth onLogin={u=>{setTeacher(u);setView('dashboard');}} toast={toast}/>;
+    if(view==='create') return <TaskCreator teacher={teacher} toast={toast} onDone={()=>setView('dashboard')}/>;
+    if(view==='edit'&&editTask) return <TaskEditor task={editTask} toast={toast} onDone={()=>setView('dashboard')}/>;
+    if(view==='review'&&reviewTask) return <SubmissionReviewer task={reviewTask} onBack={()=>setView('dashboard')}/>;
+    return <TeacherDashboard teacher={teacher} toast={toast}
+      onCreate={()=>setView('create')}
+      onEdit={t=>{setEditTask(t);setView('edit');}}
+      onReview={t=>{setReviewTask(t);setView('review');}}
+      onLogout={handleLogout}/>;
   };
 
   const renderStudent=()=>{
-    if(liveSession)return<WhiteboardViewer session={liveSession} nickname={studentNick}/>;
-    if(studentTask)return<div className="main"><AnswerSheet task={studentTask} nickname={studentNick} onSubmit={()=>{}}/></div>;
-    return<StudentCodeEntry toast={toast} onEnter={(task,nick)=>{setStudentTask(task);setStudentNick(nick);}} onWatchLive={(session,nick)=>{setLiveSession(session);setStudentNick(nick);}}/>;
+    if(liveSession) return <WhiteboardViewer session={liveSession} nickname={studentNick}/>;
+    if(studentTask) return <div className="main"><AnswerSheet task={studentTask} nickname={studentNick} onSubmit={()=>{}}/></div>;
+    return <StudentCodeEntry toast={toast}
+      onEnter={(task,nick)=>{setStudentTask(task);setStudentNick(nick);}}
+      onWatchLive={(session,nick)=>{setLiveSession(session);setStudentNick(nick);}}/>;
   };
 
   if(!role)return(
