@@ -77,6 +77,16 @@ html,body,#root{height:100%;width:100%;font-family:'Noto Sans JP',sans-serif;bac
 .btn-reject{background:#FEE2E2;color:#991B1B;border:none;}.btn-reject:hover{background:#FECACA;}
 .btn-live{background:#7C3AED;color:white;}.btn-live:hover{background:#6D28D9;}
 
+/* Toggle switch */
+.toggle-wrap{display:flex;align-items:center;gap:10px;}
+.toggle{position:relative;width:44px;height:24px;cursor:pointer;}
+.toggle input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-slider{position:absolute;inset:0;background:var(--stone-lt);border-radius:12px;transition:.2s;}
+.toggle-slider::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:white;border-radius:50%;transition:.2s;}
+.toggle input:checked+.toggle-slider{background:var(--crimson);}
+.toggle input:checked+.toggle-slider::before{transform:translateX(20px);}
+.toggle-label{font-size:13px;font-weight:700;color:var(--ink);}
+
 /* Badge */
 .badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.03em;}
 .badge-published{background:#D1FAE5;color:#065F46;}
@@ -159,7 +169,7 @@ html,body,#root{height:100%;width:100%;font-family:'Noto Sans JP',sans-serif;bac
 .progress-bar-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .4s ease;}
 .progress-text{font-size:12px;color:var(--stone);}
 
-/* Explanation box (shown after submit) */
+/* Explanation box */
 .explanation-box{background:var(--white);border:2px solid var(--gold);border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:14px;}
 .explanation-title{font-family:'Noto Serif JP',serif;font-size:18px;font-weight:700;color:var(--gold);display:flex;align-items:center;gap:8px;}
 .explanation-text{font-size:14px;line-height:1.9;color:var(--ink);white-space:pre-wrap;}
@@ -201,6 +211,49 @@ html,body,#root{height:100%;width:100%;font-family:'Noto Sans JP',sans-serif;bac
 .live-badge{display:inline-flex;align-items:center;gap:6px;background:#7C3AED;color:white;font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;}
 .live-dot{width:8px;height:8px;border-radius:50%;background:#EF4444;animation:pulse 1.2s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+/* Chat */
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 200px);min-height:400px;background:var(--white);border:2px solid var(--paper-dk);border-radius:14px;overflow:hidden;}
+.chat-header{background:var(--paper-dk);padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:2px solid var(--stone-lt);}
+.chat-header-title{font-family:'Noto Serif JP',serif;font-size:15px;font-weight:700;color:var(--crimson-dk);}
+.chat-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;}
+.chat-msg{display:flex;flex-direction:column;max-width:70%;}
+.chat-msg.mine{align-self:flex-end;align-items:flex-end;}
+.chat-msg.theirs{align-self:flex-start;align-items:flex-start;}
+.chat-bubble{padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.6;word-break:break-word;}
+.chat-msg.mine .chat-bubble{background:var(--crimson);color:white;border-bottom-right-radius:4px;}
+.chat-msg.theirs .chat-bubble{background:var(--paper-dk);color:var(--ink);border-bottom-left-radius:4px;}
+.chat-img{max-width:240px;border-radius:10px;border:1px solid var(--paper-dk);cursor:pointer;}
+.chat-meta{font-size:10px;color:var(--stone);margin-top:2px;padding:0 4px;}
+.chat-input-bar{padding:12px 16px;border-top:2px solid var(--paper-dk);display:flex;gap:8px;align-items:flex-end;}
+.chat-input{flex:1;padding:10px 14px;border:2px solid var(--paper-dk);border-radius:12px;background:var(--paper);font-family:'Noto Sans JP',sans-serif;font-size:14px;color:var(--ink);outline:none;resize:none;max-height:100px;transition:border-color .15s;}
+.chat-input:focus{border-color:var(--crimson);background:var(--white);}
+.chat-send-btn{width:40px;height:40px;border-radius:10px;background:var(--crimson);border:none;color:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;transition:background .15s;}
+.chat-send-btn:hover{background:var(--crimson-dk);}
+.chat-send-btn:disabled{opacity:.4;cursor:not-allowed;}
+.chat-img-btn{width:40px;height:40px;border-radius:10px;background:var(--paper-dk);border:2px solid var(--stone-lt);color:var(--stone);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;transition:all .15s;}
+.chat-img-btn:hover{border-color:var(--crimson);color:var(--crimson);}
+.chat-day-divider{text-align:center;font-size:11px;color:var(--stone);padding:4px 0;}
+.chat-unread{display:inline-flex;align-items:center;justify-content:center;background:var(--crimson);color:white;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px;min-width:18px;}
+.chat-student-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+.chat-student-item{background:var(--white);border:2px solid var(--paper-dk);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .15s;}
+.chat-student-item:hover{border-color:var(--crimson-lt);box-shadow:0 2px 8px var(--shadow);}
+.chat-student-name{font-weight:700;font-size:14px;color:var(--ink);flex:1;}
+.chat-student-preview{font-size:12px;color:var(--stone);flex:2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* Permission panel */
+.perm-panel{background:var(--white);border:2px solid var(--paper-dk);border-radius:14px;padding:20px;margin-bottom:20px;}
+.perm-panel-title{font-family:'Noto Serif JP',serif;font-size:15px;font-weight:700;color:var(--crimson-dk);margin-bottom:14px;}
+.perm-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--paper-dk);}
+.perm-row:last-child{border-bottom:none;}
+.perm-info{display:flex;flex-direction:column;gap:2px;}
+.perm-name{font-size:14px;font-weight:700;color:var(--ink);}
+.perm-desc{font-size:12px;color:var(--stone);}
+
+/* Student dashboard */
+.student-dash-tabs{display:flex;gap:0;margin-bottom:28px;border:2px solid var(--paper-dk);border-radius:12px;overflow:hidden;background:var(--paper-dk);}
+.student-dash-tab{flex:1;padding:11px 8px;background:transparent;color:var(--stone);font-size:13px;font-weight:700;border:none;cursor:pointer;transition:all .15s;font-family:'Noto Sans JP',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;}
+.student-dash-tab.active{background:var(--white);color:var(--crimson);box-shadow:0 1px 4px var(--shadow);}
 
 /* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(26,20,16,.55);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
@@ -251,6 +304,10 @@ html,body,#root{height:100%;width:100%;font-family:'Noto Sans JP',sans-serif;bac
 .tab-row{display:flex;gap:0;margin-bottom:24px;border:2px solid var(--paper-dk);border-radius:10px;overflow:hidden;}
 .tab-btn{flex:1;padding:10px;background:var(--paper);color:var(--stone);font-size:13px;font-weight:700;border:none;cursor:pointer;transition:all .15s;font-family:'Noto Sans JP',sans-serif;}
 .tab-btn.active{background:var(--crimson);color:var(--white);}
+
+/* Image preview modal */
+.img-preview-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:400;cursor:pointer;}
+.img-preview-overlay img{max-width:90vw;max-height:90vh;border-radius:8px;}
 
 @media(max-width:600px){.main{padding:20px 14px;}.form-box{padding:22px 18px;}.side-panel{padding:14px;}.sheet-submit-bar{flex-direction:column;align-items:stretch;}}
 .divider{height:1px;background:var(--paper-dk);margin:16px 0;}
@@ -330,6 +387,76 @@ const DB = {
     if (error) throw error;
   },
 
+  /* 生徒 */
+  async getStudents() {
+    if (!supabase) return [];
+    const { data, error } = await supabase.from('students').select('*').order('created_at');
+    if (error) throw error;
+    return data || [];
+  },
+  async verifyStudent(studentId, password) {
+    if (!supabase) return null;
+    const { data } = await supabase.from('students').select('*').eq('student_id', studentId).eq('password_hash', password).eq('is_approved', true).maybeSingle();
+    return data || null;
+  },
+  async findStudent(studentId) {
+    if (!supabase) return null;
+    const { data } = await supabase.from('students').select('*').eq('student_id', studentId).maybeSingle();
+    return data || null;
+  },
+
+  /* 生徒申請 */
+  async getStudentApplications() {
+    if (!supabase) return [];
+    const { data, error } = await supabase.from('student_applications').select('*').order('applied_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+  async createStudentApplication(app) {
+    if (!supabase) throw new Error('Supabase未設定');
+    const { error } = await supabase.from('student_applications').insert([app]);
+    if (error) throw error;
+  },
+  async getStudentVotes(applicationId) {
+    if (!supabase) return [];
+    const { data } = await supabase.from('application_votes').select('*').eq('application_id', applicationId);
+    return data || [];
+  },
+  async voteStudent(applicationId, teacherId, approve) {
+    if (!supabase) throw new Error('Supabase未設定');
+    const { error } = await supabase.from('application_votes').upsert([{ application_id: applicationId, teacher_id: teacherId, approve, voted_at: new Date().toISOString() }], { onConflict: 'application_id,teacher_id' });
+    if (error) throw error;
+  },
+  async approveStudentApplication(applicationId, studentIdToApprove, password, displayName) {
+    if (!supabase) throw new Error('Supabase未設定');
+    const { error: e1 } = await supabase.from('students').insert([{ id: genId(), student_id: studentIdToApprove, password_hash: password, display_name: displayName||studentIdToApprove, is_approved: true, approved_at: new Date().toISOString(), created_at: new Date().toISOString() }]);
+    if (e1) throw e1;
+    const { error: e2 } = await supabase.from('student_applications').update({ status: 'approved' }).eq('id', applicationId);
+    if (e2) throw e2;
+  },
+  async rejectStudentApplication(applicationId) {
+    if (!supabase) throw new Error('Supabase未設定');
+    const { error } = await supabase.from('student_applications').update({ status: 'rejected' }).eq('id', applicationId);
+    if (error) throw error;
+  },
+
+  /* 生徒権限 */
+  async getStudentPermissions(studentId) {
+    if (!supabase) return null;
+    const { data } = await supabase.from('student_permissions').select('*').eq('student_id', studentId).maybeSingle();
+    return data || { wb_allowed: false, chat_allowed: false };
+  },
+  async setStudentPermission(studentId, key, value) {
+    if (!supabase) throw new Error('Supabase未設定');
+    const { error } = await supabase.from('student_permissions').upsert([{ student_id: studentId, [key]: value, updated_at: new Date().toISOString() }], { onConflict: 'student_id' });
+    if (error) throw error;
+  },
+  async getAllStudentPermissions() {
+    if (!supabase) return [];
+    const { data } = await supabase.from('student_permissions').select('*');
+    return data || [];
+  },
+
   /* 課題 */
   async getTasks() {
     if (!supabase) return [];
@@ -402,6 +529,27 @@ const DB = {
     if (error) throw error;
   },
 
+  /* チャットメッセージ（ポーリング方式） */
+  async getChatMessages(roomId, since) {
+    if (!supabase) return [];
+    let q = supabase.from('chat_messages').select('*').eq('room_id', roomId).order('created_at', { ascending: true }).limit(100);
+    if (since) q = q.gt('created_at', since);
+    const { data, error } = await q;
+    if (error) throw error;
+    return data || [];
+  },
+  async sendChatMessage(msg) {
+    if (!supabase) throw new Error('Supabase未設定');
+    const { error } = await supabase.from('chat_messages').insert([msg]);
+    if (error) throw error;
+  },
+  async getRecentMessages(roomId) {
+    if (!supabase) return [];
+    const { data, error } = await supabase.from('chat_messages').select('*').eq('room_id', roomId).order('created_at', { ascending: true }).limit(100);
+    if (error) throw error;
+    return data || [];
+  },
+
   /* ホワイトボード */
   async createWbSession(session) {
     if (!supabase) throw new Error('Supabase未設定');
@@ -458,6 +606,16 @@ function genCode() {
   const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join('');
 }
+function fmtTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+}
+function fmtDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'});
+}
 function useToast() {
   const [toasts, setToasts] = useState([]);
   const show = useCallback((msg, type='default') => {
@@ -509,6 +667,200 @@ function ConfigBanner() {
   return (
     <div className="config-banner">
       ⚠️ <strong>Supabase未設定：</strong> <code>SUPABASE_URL</code> と <code>SUPABASE_ANON</code> を書き換えてください。
+    </div>
+  );
+}
+
+/* ══════════════════════════════════
+   チャットコンポーネント
+══════════════════════════════════ */
+function ChatPanel({ roomId, myId, myName, isTeacher, onClose }) {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [sending, setSending] = useState(false);
+  const [previewImg, setPreviewImg] = useState(null);
+  const bodyRef = useRef(null);
+  const fileRef = useRef(null);
+  const pollRef = useRef(null);
+  const lastTsRef = useRef(null);
+
+  const loadMessages = useCallback(async () => {
+    try {
+      const msgs = await DB.getRecentMessages(roomId);
+      setMessages(msgs);
+      if (msgs.length > 0) lastTsRef.current = msgs[msgs.length-1].created_at;
+    } catch(e) { console.error('chat load error', e); }
+  }, [roomId]);
+
+  useEffect(() => {
+    loadMessages();
+    pollRef.current = setInterval(async () => {
+      try {
+        const msgs = await DB.getRecentMessages(roomId);
+        setMessages(msgs);
+      } catch(e) {}
+    }, 3000);
+    return () => clearInterval(pollRef.current);
+  }, [loadMessages, roomId]);
+
+  useEffect(() => {
+    if (bodyRef.current) {
+      bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const send = async (content, type='text') => {
+    if (!content.trim() && type==='text') return;
+    setSending(true);
+    try {
+      await DB.sendChatMessage({
+        id: genId(),
+        room_id: roomId,
+        sender_id: myId,
+        sender_name: myName,
+        sender_role: isTeacher ? 'teacher' : 'student',
+        content: content,
+        message_type: type,
+        created_at: new Date().toISOString()
+      });
+      setInput('');
+      await loadMessages();
+    } catch(e) { console.error('send error', e); }
+    finally { setSending(false); }
+  };
+
+  const handleImg = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      send(ev.target.result, 'image');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleKey = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      send(input);
+    }
+  };
+
+  let lastDate = '';
+
+  return (
+    <div className="chat-wrap">
+      <div className="chat-header">
+        <span style={{fontSize:18}}>💬</span>
+        <div className="chat-header-title">{isTeacher ? `チャット: ${roomId}` : '先生とのチャット'}</div>
+        <div style={{flex:1}}/>
+        {onClose && <button className="btn btn-ghost btn-sm" onClick={onClose}>✕ 閉じる</button>}
+      </div>
+      <div className="chat-body" ref={bodyRef}>
+        {messages.length === 0 && (
+          <div style={{textAlign:'center',color:'var(--stone)',fontSize:13,padding:'40px 0'}}>
+            <div style={{fontSize:36,marginBottom:8}}>💬</div>
+            メッセージはまだありません
+          </div>
+        )}
+        {messages.map((msg, i) => {
+          const isMine = msg.sender_id === myId;
+          const dateStr = fmtDate(msg.created_at);
+          const showDate = dateStr !== lastDate;
+          lastDate = dateStr;
+          return (
+            <React.Fragment key={msg.id}>
+              {showDate && <div className="chat-day-divider">{dateStr}</div>}
+              <div className={`chat-msg ${isMine?'mine':'theirs'}`}>
+                {!isMine && <div style={{fontSize:11,color:'var(--stone)',marginBottom:2,fontWeight:700}}>{msg.sender_name}</div>}
+                {msg.message_type === 'image' ? (
+                  <img src={msg.content} className="chat-img" alt="画像" onClick={()=>setPreviewImg(msg.content)}/>
+                ) : (
+                  <div className="chat-bubble">{msg.content}</div>
+                )}
+                <div className="chat-meta">{fmtTime(msg.created_at)}</div>
+              </div>
+            </React.Fragment>
+          );
+        })}
+      </div>
+      <div className="chat-input-bar">
+        <button className="chat-img-btn" onClick={()=>fileRef.current.click()} title="画像を送る">🖼</button>
+        <input ref={fileRef} type="file" accept="image/*" style={{display:'none'}} onChange={e=>handleImg(e.target.files?.[0])}/>
+        <textarea
+          className="chat-input"
+          placeholder="メッセージを入力… (Enter で送信)"
+          value={input}
+          onChange={e=>setInput(e.target.value)}
+          onKeyDown={handleKey}
+          rows={1}
+        />
+        <button className="chat-send-btn" onClick={()=>send(input)} disabled={sending||!input.trim()}>
+          {sending ? <span className="spinner" style={{width:14,height:14,borderWidth:2}}/> : '➤'}
+        </button>
+      </div>
+      {previewImg && (
+        <div className="img-preview-overlay" onClick={()=>setPreviewImg(null)}>
+          <img src={previewImg} alt="プレビュー"/>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* 教師側：生徒一覧チャット */
+function TeacherChatTab({ teacher, toast }) {
+  const [students, setStudents] = useState([]);
+  const [selStudent, setSelStudent] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    DB.getStudents().then(s => { setStudents(s.filter(x=>x.is_approved)); setLoading(false); })
+      .catch(e => { toast.show('取得エラー','error'); setLoading(false); });
+  }, []);
+
+  if (selStudent) {
+    const roomId = [teacher.teacherId, selStudent.student_id].sort().join('__');
+    return (
+      <div>
+        <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:16}}>
+          <button className="btn btn-ghost btn-sm" onClick={()=>setSelStudent(null)}>← 生徒一覧</button>
+          <div style={{fontFamily:'Noto Serif JP',fontSize:18,fontWeight:700,color:'var(--crimson-dk)'}}>
+            💬 {selStudent.display_name || selStudent.student_id}
+          </div>
+        </div>
+        <ChatPanel
+          roomId={roomId}
+          myId={teacher.teacherId}
+          myName={teacher.teacherId}
+          isTeacher={true}
+          onClose={()=>setSelStudent(null)}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="dashboard-title" style={{marginBottom:20}}>💬 チャット — 生徒を選択</div>
+      {loading ? (
+        <div style={{textAlign:'center',padding:'40px'}}><span className="spinner dark" style={{width:28,height:28,borderWidth:3}}/></div>
+      ) : students.length === 0 ? (
+        <div style={{textAlign:'center',padding:'60px',color:'var(--stone)'}}>
+          <div style={{fontSize:40,marginBottom:10}}>👥</div>
+          承認済み生徒がいません
+        </div>
+      ) : (
+        <div className="chat-student-list">
+          {students.map(st => (
+            <div key={st.id} className="chat-student-item" onClick={()=>setSelStudent(st)}>
+              <span style={{fontSize:22}}>🧑‍🎓</span>
+              <span className="chat-student-name">{st.display_name || st.student_id}</span>
+              <span style={{fontSize:12,color:'var(--stone)'}}>ID: {st.student_id}</span>
+              <span style={{fontSize:18,color:'var(--crimson)'}}>→</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -588,6 +940,83 @@ function TeacherRegister({ onDone, toast }) {
 }
 
 /* ══════════════════════════════════
+   生徒認証
+══════════════════════════════════ */
+function StudentAuth({ onLogin, toast }) {
+  const [tab, setTab] = useState('login');
+  return (
+    <div className="main" style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'calc(100vh - 58px)'}}>
+      <div className="form-box" style={{maxWidth:460}}>
+        <div style={{textAlign:'center',marginBottom:20}}><Kamon size={52} color="#C9972C"/></div>
+        <ConfigBanner/>
+        <div className="tab-row">
+          <button className={`tab-btn ${tab==='login'?'active':''}`} onClick={()=>setTab('login')}>ログイン</button>
+          <button className={`tab-btn ${tab==='register'?'active':''}`} onClick={()=>setTab('register')}>新規登録申請</button>
+        </div>
+        {tab==='login' ? <StudentLogin onLogin={onLogin} toast={toast}/> : <StudentRegister onDone={()=>setTab('login')} toast={toast}/>}
+      </div>
+    </div>
+  );
+}
+function StudentLogin({ onLogin, toast }) {
+  const [sid,setSid]=useState(''); const [pass,setPass]=useState(''); const [err,setErr]=useState(''); const [loading,setLoading]=useState(false);
+  const handle = async () => {
+    if (!sid.trim()||!pass){setErr('生徒IDとパスワードを入力してください');return;}
+    setLoading(true); setErr('');
+    try {
+      const student = await DB.verifyStudent(sid.trim(), pass);
+      if (!student){setErr('IDまたはパスワードが違います。または未承認です');return;}
+      onLogin({ id: student.id, studentId: student.student_id, displayName: student.display_name || student.student_id });
+    } catch(e){setErr('エラー: '+e.message);}
+    finally{setLoading(false);}
+  };
+  return (
+    <>
+      <div className="form-group"><label className="form-label">生徒ID</label><input className="form-input" placeholder="例: taro_yamada" value={sid} onChange={e=>{setSid(e.target.value);setErr('');}} onKeyDown={e=>e.key==='Enter'&&handle()}/></div>
+      <div className="form-group"><label className="form-label">パスワード</label><input className="form-input" type="password" value={pass} onChange={e=>{setPass(e.target.value);setErr('');}} onKeyDown={e=>e.key==='Enter'&&handle()}/></div>
+      {err&&<div style={{color:'var(--crimson)',fontSize:13,marginBottom:12}}>{err}</div>}
+      <button className="btn btn-gold btn-full btn-lg" onClick={handle} disabled={loading}>{loading?<><span className="spinner dark"/> ログイン中…</>:'ログイン'}</button>
+      <div style={{fontSize:12,color:'var(--stone)',textAlign:'center',marginTop:8}}>コードで直接開く場合は「コード入力」タブ（右上）をご利用ください</div>
+    </>
+  );
+}
+function StudentRegister({ onDone, toast }) {
+  const [sid,setSid]=useState(''); const [disp,setDisp]=useState(''); const [pass,setPass]=useState(''); const [pass2,setPass2]=useState(''); const [err,setErr]=useState(''); const [loading,setLoading]=useState(false); const [done,setDone]=useState(false);
+  const handle = async () => {
+    if (!sid.trim()){setErr('生徒IDを入力してください');return;}
+    if (!disp.trim()){setErr('表示名を入力してください');return;}
+    if (pass.length<6){setErr('パスワードは6文字以上');return;}
+    if (pass!==pass2){setErr('パスワードが一致しません');return;}
+    setLoading(true); setErr('');
+    try {
+      const existing = await DB.findStudent(sid.trim());
+      if (existing){setErr('このIDは既に使われています');setLoading(false);return;}
+      await DB.createStudentApplication({ id:genId(), student_id:sid.trim(), display_name:disp.trim(), password_hash:pass, status:'pending', applied_at:new Date().toISOString() });
+      setDone(true); toast.show('申請を送信しました','success');
+    } catch(e){setErr('エラー: '+e.message);}
+    finally{setLoading(false);}
+  };
+  if (done) return (
+    <div style={{textAlign:'center',padding:'20px 0'}}>
+      <div style={{fontSize:48,marginBottom:12}}>📬</div>
+      <div style={{fontFamily:'Noto Serif JP',fontSize:17,fontWeight:700,color:'var(--crimson-dk)',marginBottom:8}}>申請を送信しました</div>
+      <div style={{fontSize:13,color:'var(--stone)',lineHeight:1.8,marginBottom:20}}>教師全員の承認後にログインできます。<br/>しばらくお待ちください。</div>
+      <button className="btn btn-ghost btn-full" onClick={onDone}>ログイン画面へ</button>
+    </div>
+  );
+  return (
+    <>
+      <div className="form-group"><label className="form-label">生徒ID <span style={{color:'var(--crimson)'}}>*</span></label><input className="form-input" placeholder="例: taro_yamada" value={sid} onChange={e=>{setSid(e.target.value);setErr('');}} maxLength={30}/><div className="form-hint">ログイン時に使います（半角英数字）</div></div>
+      <div className="form-group"><label className="form-label">表示名 <span style={{color:'var(--crimson)'}}>*</span></label><input className="form-input" placeholder="例: 山田太郎" value={disp} onChange={e=>{setDisp(e.target.value);setErr('');}} maxLength={30}/></div>
+      <div className="form-group"><label className="form-label">パスワード <span style={{color:'var(--crimson)'}}>*</span></label><input className="form-input" type="password" placeholder="6文字以上" value={pass} onChange={e=>{setPass(e.target.value);setErr('');}}/></div>
+      <div className="form-group"><label className="form-label">パスワード（確認）</label><input className="form-input" type="password" value={pass2} onChange={e=>{setPass2(e.target.value);setErr('');}}/></div>
+      {err&&<div style={{color:'var(--crimson)',fontSize:13,marginBottom:12}}>{err}</div>}
+      <button className="btn btn-gold btn-full btn-lg" onClick={handle} disabled={loading}>{loading?<><span className="spinner dark"/> 申請中…</>:'登録申請する'}</button>
+    </>
+  );
+}
+
+/* ══════════════════════════════════
    教師ダッシュボード（タブ付き）
 ══════════════════════════════════ */
 function TeacherDashboard({ teacher, onCreate, onEdit, onReview, toast, onLogout }) {
@@ -604,14 +1033,172 @@ function TeacherDashboard({ teacher, onCreate, onEdit, onReview, toast, onLogout
       </div>
 
       <div className="dash-tabs">
-        <button className={`dash-tab ${activeTab==='tasks'?'active':''}`} onClick={()=>setActiveTab('tasks')}>📋 課題管理</button>
+        <button className={`dash-tab ${activeTab==='tasks'?'active':''}`} onClick={()=>setActiveTab('tasks')}>📋 課題</button>
         <button className={`dash-tab ${activeTab==='scoring'?'active':''}`} onClick={()=>setActiveTab('scoring')}>📝 採点</button>
-        <button className={`dash-tab ${activeTab==='whiteboard'?'active':''}`} onClick={()=>setActiveTab('whiteboard')}>🖊 ホワイトボード</button>
+        <button className={`dash-tab ${activeTab==='whiteboard'?'active':''}`} onClick={()=>setActiveTab('whiteboard')}>🖊 板書</button>
+        <button className={`dash-tab ${activeTab==='chat'?'active':''}`} onClick={()=>setActiveTab('chat')}>💬 チャット</button>
+        <button className={`dash-tab ${activeTab==='students'?'active':''}`} onClick={()=>setActiveTab('students')}>👥 生徒管理</button>
       </div>
 
       {activeTab==='tasks'      && <TasksTab teacher={teacher} onCreate={onCreate} onEdit={onEdit} onReview={onReview} toast={toast}/>}
       {activeTab==='scoring'    && <ScoringTab teacher={teacher} toast={toast}/>}
       {activeTab==='whiteboard' && <WhiteboardTab teacher={teacher} toast={toast}/>}
+      {activeTab==='chat'       && <TeacherChatTab teacher={teacher} toast={toast}/>}
+      {activeTab==='students'   && <StudentsManageTab teacher={teacher} toast={toast}/>}
+    </div>
+  );
+}
+
+/* ── 生徒管理タブ（教師用） ── */
+function StudentsManageTab({ teacher, toast }) {
+  const [students, setStudents] = useState([]);
+  const [applications, setApplications] = useState([]);
+  const [appVotes, setAppVotes] = useState({});
+  const [teachers, setTeachers] = useState([]);
+  const [perms, setPerms] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [savingPerm, setSavingPerm] = useState({});
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [sts, apps, trs, allPerms] = await Promise.all([
+        DB.getStudents(),
+        DB.getStudentApplications(),
+        DB.getTeachers(),
+        DB.getAllStudentPermissions()
+      ]);
+      setStudents(sts.filter(s=>s.is_approved));
+      setApplications(apps.filter(a=>a.status==='pending'));
+      setTeachers(trs);
+      const permMap = {};
+      allPerms.forEach(p => { permMap[p.student_id] = p; });
+      setPerms(permMap);
+      const votes = {};
+      await Promise.all(apps.filter(a=>a.status==='pending').map(async a => {
+        votes[a.id] = await DB.getStudentVotes(a.id);
+      }));
+      setAppVotes(votes);
+    } catch(e) { toast.show('取得エラー: '+e.message,'error'); }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleVote = async (app, approve) => {
+    try {
+      await DB.voteStudent(app.id, teacher.teacherId, approve);
+      const updatedVotes = await DB.getStudentVotes(app.id);
+      const allTeachers = await DB.getTeachers();
+      const approvedTeachers = allTeachers.filter(t=>t.is_approved);
+      if (updatedVotes.some(v=>!v.approve)) {
+        await DB.rejectStudentApplication(app.id);
+        toast.show(`${app.student_id} の申請を却下しました`);
+      } else if (updatedVotes.filter(v=>v.approve).length >= approvedTeachers.length && approvedTeachers.length>0) {
+        await DB.approveStudentApplication(app.id, app.student_id, app.password_hash, app.display_name);
+        toast.show(`${app.student_id} を生徒として承認しました！`,'success');
+      } else {
+        toast.show(approve?'承認票を入れました':'否決票を入れました', approve?'success':'default');
+      }
+      load();
+    } catch(e) { toast.show('エラー: '+e.message,'error'); }
+  };
+
+  const togglePerm = async (studentId, key) => {
+    const current = perms[studentId]?.[key] || false;
+    setSavingPerm(s=>({...s,[`${studentId}_${key}`]:true}));
+    try {
+      await DB.setStudentPermission(studentId, key, !current);
+      setPerms(p => ({...p, [studentId]: {...(p[studentId]||{}), [key]: !current}}));
+      toast.show(`${studentId}: ${key==='wb_allowed'?'ホワイトボード':'チャット'}を${!current?'許可':'禁止'}しました`,'success');
+    } catch(e) { toast.show('エラー: '+e.message,'error'); }
+    finally { setSavingPerm(s=>({...s,[`${studentId}_${key}`]:false})); }
+  };
+
+  if (loading) return <div style={{textAlign:'center',padding:'60px'}}><span className="spinner dark" style={{width:28,height:28,borderWidth:3}}/></div>;
+
+  return (
+    <div>
+      <div className="dashboard-title" style={{marginBottom:20}}>👥 生徒管理</div>
+
+      {/* 申請一覧 */}
+      {applications.length > 0 && (
+        <div style={{marginBottom:28}}>
+          <div style={{fontWeight:700,fontSize:15,color:'var(--crimson-dk)',marginBottom:12}}>📬 承認待ちの申請 ({applications.length}件)</div>
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            {applications.map(app => {
+              const votes = appVotes[app.id] || [];
+              const myVote = votes.find(v=>v.teacher_id===teacher.teacherId);
+              const approvedTeachers = teachers.filter(t=>t.is_approved);
+              return (
+                <div key={app.id} className="approval-item">
+                  <div className="approval-item-info">
+                    <div className="approval-item-id">🧑‍🎓 {app.display_name || app.student_id} <span style={{fontSize:12,color:'var(--stone)',fontWeight:400}}>（ID: {app.student_id}）</span></div>
+                    <div className="approval-item-meta">申請: {app.applied_at?.slice(0,16).replace('T',' ')}</div>
+                    <div className="approval-votes">承認票: <span className="vote-count">{votes.filter(v=>v.approve).length}</span>/{approvedTeachers.length}人
+                      {myVote && <span style={{marginLeft:8,fontSize:11,color:myVote.approve?'#065F46':'#991B1B',fontWeight:700}}>{myVote.approve?'✓承認済み':'✕否決済み'}</span>}
+                    </div>
+                  </div>
+                  {!myVote && (
+                    <div style={{display:'flex',gap:6}}>
+                      <button className="btn btn-sm btn-approve" onClick={()=>handleVote(app,true)}>✓ 承認</button>
+                      <button className="btn btn-sm btn-reject" onClick={()=>handleVote(app,false)}>✕ 否決</button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 承認済み生徒 + 権限管理 */}
+      <div style={{fontWeight:700,fontSize:15,color:'var(--crimson-dk)',marginBottom:12}}>✅ 承認済み生徒 ({students.length}人)</div>
+      {students.length === 0 ? (
+        <div style={{textAlign:'center',padding:'40px',color:'var(--stone)'}}>
+          <div style={{fontSize:40,marginBottom:8}}>👥</div>承認済み生徒がいません
+        </div>
+      ) : (
+        <div style={{display:'flex',flexDirection:'column',gap:12}}>
+          {students.map(st => {
+            const p = perms[st.student_id] || {};
+            return (
+              <div key={st.id} className="perm-panel">
+                <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
+                  <span style={{fontSize:22}}>🧑‍🎓</span>
+                  <div>
+                    <div style={{fontWeight:700,fontSize:15,color:'var(--ink)'}}>{st.display_name || st.student_id}</div>
+                    <div style={{fontSize:12,color:'var(--stone)'}}>ID: {st.student_id}</div>
+                  </div>
+                </div>
+                <div className="perm-row">
+                  <div className="perm-info">
+                    <div className="perm-name">🖊 ホワイトボード視聴</div>
+                    <div className="perm-desc">LIVEコードでホワイトボードを視聴できるようにする</div>
+                  </div>
+                  <label className="toggle">
+                    <input type="checkbox" checked={!!p.wb_allowed} onChange={()=>togglePerm(st.student_id,'wb_allowed')} disabled={!!savingPerm[`${st.student_id}_wb_allowed`]}/>
+                    <span className="toggle-slider"/>
+                  </label>
+                </div>
+                <div className="perm-row">
+                  <div className="perm-info">
+                    <div className="perm-name">💬 チャット</div>
+                    <div className="perm-desc">先生とのチャットを使えるようにする</div>
+                  </div>
+                  <label className="toggle">
+                    <input type="checkbox" checked={!!p.chat_allowed} onChange={()=>togglePerm(st.student_id,'chat_allowed')} disabled={!!savingPerm[`${st.student_id}_chat_allowed`]}/>
+                    <span className="toggle-slider"/>
+                  </label>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <div style={{marginTop:12}}>
+        <button className="btn btn-ghost btn-sm" onClick={load}>↻ 更新</button>
+      </div>
     </div>
   );
 }
@@ -736,7 +1323,6 @@ function TasksTab({ teacher, onCreate, onEdit, onReview, toast }) {
         </div>
       )}
 
-      {/* 教師管理モーダル */}
       {showApprovals&&(
         <div className="modal-overlay" onClick={()=>setShowApprovals(false)}>
           <div className="modal modal-wide" onClick={e=>e.stopPropagation()} style={{maxHeight:'85vh',overflowY:'auto'}}>
@@ -842,7 +1428,6 @@ function ScoringTab({ teacher, toast }) {
   };
 
   const markLabels = {correct:'○', partial:'△', wrong:'✕'};
-  const markColors = {correct:'#065F46', partial:'#D97706', wrong:'#DC2626'};
 
   if (!selTask) return (
     <div>
@@ -872,10 +1457,8 @@ function ScoringTab({ teacher, toast }) {
         <button className="btn btn-ghost btn-sm" onClick={()=>setSelTask(null)}>← 課題一覧</button>
         <div className="dashboard-title">{selTask.title} — 採点</div>
       </div>
-
-      {/* 配点設定 */}
       <div className="side-panel" style={{marginBottom:24}}>
-        <div className="side-panel-title">⚖️ 配点設定（問題ごとの点数）</div>
+        <div className="side-panel-title">⚖️ 配点設定</div>
         <div style={{display:'flex',gap:12,flexWrap:'wrap',alignItems:'flex-end'}}>
           {fields.map(f=>(
             <div key={f.id} style={{display:'flex',flexDirection:'column',gap:4,minWidth:80}}>
@@ -886,22 +1469,15 @@ function ScoringTab({ teacher, toast }) {
             </div>
           ))}
           <button className="btn btn-gold btn-sm" onClick={saveConfig} disabled={saving}>
-            {saving?<><span className="spinner dark"/> 保存中…</>:'💾 配点を保存'}
+            {saving?<><span className="spinner dark"/> 保存中…</>:'💾 保存'}
           </button>
         </div>
-        <div style={{fontSize:12,color:'var(--stone)'}}>
-          合計配点: {fields.reduce((s,f)=>s+Number(config[f.id]||0),0)} 点　
-          △は配点の半分として計算されます
-        </div>
+        <div style={{fontSize:12,color:'var(--stone)'}}>合計: {fields.reduce((s,f)=>s+Number(config[f.id]||0),0)}点　△は配点の半分</div>
       </div>
-
-      {/* 採点テーブル */}
       {loading?(
         <div style={{textAlign:'center',padding:'40px'}}><span className="spinner dark" style={{width:28,height:28,borderWidth:3}}/></div>
       ):subs.length===0?(
-        <div style={{textAlign:'center',padding:'60px',color:'var(--stone)'}}>
-          <div style={{fontSize:40,marginBottom:10}}>📭</div>まだ提出がありません
-        </div>
+        <div style={{textAlign:'center',padding:'60px',color:'var(--stone)'}}><div style={{fontSize:40,marginBottom:10}}>📭</div>まだ提出がありません</div>
       ):(
         <div style={{overflowX:'auto'}}>
           <table className="sub-table">
@@ -909,12 +1485,7 @@ function ScoringTab({ teacher, toast }) {
               <tr>
                 <th>生徒</th>
                 <th>提出日時</th>
-                {fields.map(f=>(
-                  <th key={f.id}>
-                    {f.label}<br/>
-                    <span style={{fontWeight:400,color:'var(--stone)'}}>{config[f.id]||0}点</span>
-                  </th>
-                ))}
+                {fields.map(f=>(<th key={f.id}>{f.label}<br/><span style={{fontWeight:400,color:'var(--stone)'}}>{config[f.id]||0}点</span></th>))}
                 <th>得点</th>
               </tr>
             </thead>
@@ -929,9 +1500,7 @@ function ScoringTab({ teacher, toast }) {
                       const mark=getMark(sub.id,f.id);
                       return (
                         <td key={f.id}>
-                          <div style={{fontSize:11,color:'var(--stone)',marginBottom:4}}>
-                            <span className="answer-chip">{sub.answers[f.id]||'—'}</span>
-                          </div>
+                          <div style={{fontSize:11,color:'var(--stone)',marginBottom:4}}><span className="answer-chip">{sub.answers[f.id]||'—'}</span></div>
                           <div style={{display:'flex',gap:4}}>
                             {['correct','partial','wrong'].map(m=>(
                               <button key={m} className={`mark-btn ${m} ${mark===m?'active':''}`}
@@ -944,10 +1513,7 @@ function ScoringTab({ teacher, toast }) {
                         </td>
                       );
                     })}
-                    <td>
-                      <span className="score-total">{earned}</span>
-                      <span style={{fontSize:12,color:'var(--stone)'}}> / {total}</span>
-                    </td>
+                    <td><span className="score-total">{earned}</span><span style={{fontSize:12,color:'var(--stone)'}}> / {total}</span></td>
                   </tr>
                 );
               })}
@@ -960,9 +1526,9 @@ function ScoringTab({ teacher, toast }) {
 }
 
 /* ══════════════════════════════════
-   ホワイトボード（Supabase Broadcast）
-   DBへのストローク保存なし
-   supabase.channel Broadcast で直送
+   ホワイトボード（教師）
+   ※ 消しゴムは背景レイヤーを保護するため
+     描画レイヤー（drawingCanvasRef）のみを操作する
 ══════════════════════════════════ */
 function WhiteboardTab({ teacher, toast }) {
   const [tasks,setTasks]             = useState([]);
@@ -976,8 +1542,14 @@ function WhiteboardTab({ teacher, toast }) {
   const [lineWidth,setLineWidth]     = useState(3);
   const [undoStack,setUndoStack]     = useState([]);
 
-  /* refs – event handlers always read latest values */
-  const canvasRef    = useRef(null);
+  /* 2レイヤー構成:
+     bgCanvasRef     = 背景画像（固定・消されない）
+     drawingCanvasRef = 描画専用（消しゴムもここのみ操作）
+     compositeRef    = 表示用合成（配信送信用）
+  */
+  const bgCanvasRef      = useRef(null);
+  const drawingCanvasRef = useRef(null);
+  const wrapperRef       = useRef(null);
   const channelRef   = useRef(null);
   const sessionIdRef = useRef(null);
   const isLiveRef    = useRef(false);
@@ -988,18 +1560,22 @@ function WhiteboardTab({ teacher, toast }) {
   const startPos     = useRef({x:0,y:0});
   const strokeSnap   = useRef(null);
 
+  const W = 900, H = 600;
+
   useEffect(()=>{ DB.getTasks().then(setTasks).catch(()=>{}); },[]);
 
-  /* sync refs */
   useEffect(()=>{ isLiveRef.current = isLive; },  [isLive]);
   useEffect(()=>{ toolRef.current   = tool; },    [tool]);
   useEffect(()=>{ colorRef.current  = color; },   [color]);
   useEffect(()=>{ lwRef.current     = lineWidth; },[lineWidth]);
 
-  /* canvas size */
+  /* 背景キャンバス初期化 */
   useEffect(()=>{
-    const c=canvasRef.current; if(!c)return;
-    c.width=900; c.height=600;
+    const bg = bgCanvasRef.current;
+    const dc = drawingCanvasRef.current;
+    if (!bg || !dc) return;
+    bg.width = W; bg.height = H;
+    dc.width = W; dc.height = H;
   },[]);
 
   /* 課題選択 → selTask */
@@ -1008,21 +1584,31 @@ function WhiteboardTab({ teacher, toast }) {
     setSelTask(tasks.find(t=>t.id===selTaskId)||null);
   },[selTaskId,tasks]);
 
-  /* 背景画像描画（薄く） */
+  /* 背景画像描画（薄く・bgキャンバスへ） */
   useEffect(()=>{
-    const c=canvasRef.current; if(!c)return;
-    const ctx=c.getContext('2d');
-    ctx.clearRect(0,0,c.width,c.height);
+    const bg=bgCanvasRef.current; if(!bg)return;
+    const ctx=bg.getContext('2d');
+    ctx.clearRect(0,0,W,H);
     if(selTask?.imageDataUrl){
       const img=new Image();
       img.onload=()=>{
         ctx.globalAlpha=0.25;
-        ctx.drawImage(img,0,0,c.width,c.height);
+        ctx.drawImage(img,0,0,W,H);
         ctx.globalAlpha=1.0;
       };
       img.src=selTask.imageDataUrl;
     }
   },[selTask]);
+
+  /* 合成して配信用データを取得 */
+  const getCompositeDataUrl = useCallback(()=>{
+    const offscreen = document.createElement('canvas');
+    offscreen.width = W; offscreen.height = H;
+    const ctx = offscreen.getContext('2d');
+    if (bgCanvasRef.current)      ctx.drawImage(bgCanvasRef.current, 0, 0);
+    if (drawingCanvasRef.current) ctx.drawImage(drawingCanvasRef.current, 0, 0);
+    return offscreen.toDataURL('image/png');
+  },[]);
 
   /* broadcast helper */
   const broadcast=(event,payload)=>{
@@ -1039,9 +1625,7 @@ function WhiteboardTab({ teacher, toast }) {
     try{
       await DB.createWbSession({id,access_code:code,task_id:selTaskId||null,is_live:true,created_by:teacher.teacherId,created_at:new Date().toISOString()});
     }catch(e){ toast.show('配信開始エラー: '+e.message,'error'); return; }
-
     sessionIdRef.current=id;
-
     const ch=supabase.channel('wb:'+code,{config:{broadcast:{self:false}}});
     ch.subscribe(status=>{
       if(status==='SUBSCRIBED'){
@@ -1066,17 +1650,17 @@ function WhiteboardTab({ teacher, toast }) {
     }
     sessionIdRef.current=null;
     setIsLive(false); setSessionCode(''); setUndoStack([]);
-    const c=canvasRef.current;
-    if(c){ const ctx=c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height); }
+    const dc=drawingCanvasRef.current;
+    if(dc){ dc.getContext('2d').clearRect(0,0,W,H); }
     toast.show('配信を終了しました');
   };
 
-  /* クリア */
+  /* クリア（描画レイヤーのみ） */
   const clearCanvas=()=>{
-    const c=canvasRef.current; if(!c)return;
-    setUndoStack(s=>[...s,c.toDataURL('image/png')]);
-    const ctx=c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height);
-    broadcast('clear',{});
+    const dc=drawingCanvasRef.current; if(!dc)return;
+    setUndoStack(s=>[...s, dc.toDataURL('image/png')]);
+    dc.getContext('2d').clearRect(0,0,W,H);
+    broadcast('snapshot',{data:getCompositeDataUrl()});
   };
 
   /* やり直し */
@@ -1084,22 +1668,25 @@ function WhiteboardTab({ teacher, toast }) {
     if(!undoStack.length)return;
     const prev=undoStack[undoStack.length-1];
     setUndoStack(s=>s.slice(0,-1));
-    const c=canvasRef.current; if(!c)return;
-    const ctx=c.getContext('2d');
-    ctx.clearRect(0,0,c.width,c.height);
+    const dc=drawingCanvasRef.current; if(!dc)return;
+    const ctx=dc.getContext('2d');
+    ctx.clearRect(0,0,W,H);
     if(prev){
       const img=new Image();
-      img.onload=()=>{ ctx.drawImage(img,0,0); broadcast('snapshot',{data:c.toDataURL('image/png')}); };
+      img.onload=()=>{
+        ctx.drawImage(img,0,0);
+        broadcast('snapshot',{data:getCompositeDataUrl()});
+      };
       img.src=prev;
     } else {
-      broadcast('clear',{});
+      broadcast('snapshot',{data:getCompositeDataUrl()});
     }
   };
 
   /* pointer helpers */
-  const getPos=(e,c)=>{
-    const r=c.getBoundingClientRect();
-    const sx=c.width/r.width, sy=c.height/r.height;
+  const getPos=(e,el)=>{
+    const r=el.getBoundingClientRect();
+    const sx=W/r.width, sy=H/r.height;
     const src=e.touches?e.touches[0]:e;
     return {x:(src.clientX-r.left)*sx, y:(src.clientY-r.top)*sy};
   };
@@ -1107,35 +1694,50 @@ function WhiteboardTab({ teacher, toast }) {
   const onDown=(e)=>{
     if(!isLiveRef.current)return;
     e.preventDefault();
-    const c=canvasRef.current; const ctx=c.getContext('2d');
-    const pos=getPos(e,c);
-    setUndoStack(s=>[...s,c.toDataURL('image/png')]);
+    const dc=drawingCanvasRef.current;
+    const ctx=dc.getContext('2d');
+    const pos=getPos(e, dc);
+    setUndoStack(s=>[...s, dc.toDataURL('image/png')]);
     drawing.current=true; startPos.current=pos;
-    strokeSnap.current=ctx.getImageData(0,0,c.width,c.height);
-    if(toolRef.current==='pen'){ ctx.beginPath(); ctx.moveTo(pos.x,pos.y); }
+    strokeSnap.current=ctx.getImageData(0,0,W,H);
+    if(toolRef.current==='pen'||toolRef.current==='eraser'){
+      ctx.beginPath(); ctx.moveTo(pos.x,pos.y);
+    }
   };
 
   const onMove=(e)=>{
     if(!drawing.current||!isLiveRef.current)return;
     e.preventDefault();
-    const c=canvasRef.current; const ctx=c.getContext('2d');
-    const pos=getPos(e,c);
-    ctx.strokeStyle=colorRef.current; ctx.lineWidth=lwRef.current;
-    ctx.lineCap='round'; ctx.lineJoin='round';
-    if(toolRef.current==='pen'){
-      ctx.lineTo(pos.x,pos.y); ctx.stroke();
-    } else {
-      ctx.putImageData(strokeSnap.current,0,0);
+    const dc=drawingCanvasRef.current;
+    const ctx=dc.getContext('2d');
+    const pos=getPos(e, dc);
+
+    if(toolRef.current==='eraser'){
+      /* 消しゴム: 描画レイヤーのみ消す */
+      ctx.save();
+      ctx.globalCompositeOperation='destination-out';
       ctx.beginPath();
-      if(toolRef.current==='line'){
-        ctx.moveTo(startPos.current.x,startPos.current.y);
+      ctx.arc(pos.x,pos.y,lwRef.current*3,0,Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    } else {
+      ctx.strokeStyle=colorRef.current; ctx.lineWidth=lwRef.current;
+      ctx.lineCap='round'; ctx.lineJoin='round';
+      if(toolRef.current==='pen'){
         ctx.lineTo(pos.x,pos.y); ctx.stroke();
       } else {
-        const rx=Math.abs(pos.x-startPos.current.x)/2;
-        const ry=Math.abs(pos.y-startPos.current.y)/2;
-        const cx=startPos.current.x+(pos.x-startPos.current.x)/2;
-        const cy=startPos.current.y+(pos.y-startPos.current.y)/2;
-        ctx.ellipse(cx,cy,Math.max(1,rx),Math.max(1,ry),0,0,2*Math.PI); ctx.stroke();
+        ctx.putImageData(strokeSnap.current,0,0);
+        ctx.beginPath();
+        if(toolRef.current==='line'){
+          ctx.moveTo(startPos.current.x,startPos.current.y);
+          ctx.lineTo(pos.x,pos.y); ctx.stroke();
+        } else {
+          const rx=Math.abs(pos.x-startPos.current.x)/2;
+          const ry=Math.abs(pos.y-startPos.current.y)/2;
+          const cx=startPos.current.x+(pos.x-startPos.current.x)/2;
+          const cy=startPos.current.y+(pos.y-startPos.current.y)/2;
+          ctx.ellipse(cx,cy,Math.max(1,rx),Math.max(1,ry),0,0,2*Math.PI); ctx.stroke();
+        }
       }
     }
   };
@@ -1144,11 +1746,30 @@ function WhiteboardTab({ teacher, toast }) {
     if(!drawing.current||!isLiveRef.current)return;
     if(e.type!=='touchend') e.preventDefault();
     drawing.current=false;
-    const c=canvasRef.current;
-    broadcast('snapshot',{data:c.toDataURL('image/png')});
+    broadcast('snapshot',{data:getCompositeDataUrl()});
   };
 
   const colors=['#1A1410','#9B1B30','#C9972C','#1E40AF','#065F46','#7C3AED','#FFFFFF'];
+
+  /* ラッパースタイル: 2つのcanvasを重ねる */
+  const canvasStackStyle = {
+    position:'relative',
+    borderRadius:14,
+    overflow:'hidden',
+    boxShadow:'0 2px 12px var(--shadow)',
+    background:'white',
+  };
+  const canvasStyle = {
+    width:'100%',
+    display:'block',
+    position:'absolute',
+    top:0,left:0,
+  };
+  const topCanvasStyle = {
+    ...canvasStyle,
+    cursor:isLive?( tool==='eraser'?'cell':'crosshair'):'not-allowed',
+    opacity:isLive?1:.6,
+  };
 
   return (
     <div className="wb-wrap">
@@ -1168,7 +1789,7 @@ function WhiteboardTab({ teacher, toast }) {
 
       <div className="wb-toolbar">
         <span style={{fontSize:12,fontWeight:700,color:'var(--stone)'}}>ツール：</span>
-        {[['pen','✏️','フリー'],['line','📏','直線'],['circle','⭕','楕円']].map(([t,icon,label])=>(
+        {[['pen','✏️','フリー'],['line','📏','直線'],['circle','⭕','楕円'],['eraser','⬜','消しゴム']].map(([t,icon,label])=>(
           <button key={t} className={`wb-tool-btn ${tool===t?'active':''}`} title={label} onClick={()=>setTool(t)}>{icon}</button>
         ))}
         <div style={{width:1,height:24,background:'var(--stone-lt)',margin:'0 4px'}}/>
@@ -1184,11 +1805,13 @@ function WhiteboardTab({ teacher, toast }) {
           <button key={w} className={`wb-tool-btn ${lineWidth===w?'active':''}`}
             style={{fontSize:10,fontWeight:700}} onClick={()=>setLineWidth(w)}>{w}</button>
         ))}
+        {tool==='eraser'&&<span style={{fontSize:12,color:'var(--crimson)',fontWeight:700,marginLeft:4}}>消しゴム（背景は消えません）</span>}
       </div>
 
-      <div style={{position:'relative',borderRadius:14,overflow:'hidden',boxShadow:'0 2px 12px var(--shadow)'}}>
-        <canvas ref={canvasRef} className="wb-canvas"
-          style={{width:'100%',cursor:isLive?'crosshair':'not-allowed',opacity:isLive?1:.6}}
+      {/* Canvas stack: background + drawing layer */}
+      <div style={{...canvasStackStyle, paddingTop:`${H/W*100}%`}} ref={wrapperRef}>
+        <canvas ref={bgCanvasRef} style={{...canvasStyle, pointerEvents:'none'}}/>
+        <canvas ref={drawingCanvasRef} style={topCanvasStyle}
           onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
           onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}/>
         {!isLive&&(
@@ -1219,7 +1842,7 @@ function WhiteboardTab({ teacher, toast }) {
                 style={{width:'100%',borderRadius:8,border:'2px solid var(--paper-dk)',marginBottom:12,maxHeight:140,objectFit:'contain',background:'#f5f5f5'}}/>
             )}
             <div style={{background:'var(--paper)',borderRadius:10,padding:14,fontSize:13,color:'var(--stone)',lineHeight:1.8}}>
-              配信するとLIVEコードが発行されます。生徒はそのコードを入力すると板書をリアルタイムで視聴できます。
+              配信するとLIVEコードが発行されます。<br/>生徒はそのコードを入力すると板書をリアルタイムで視聴できます。
             </div>
             <div className="modal-actions">
               <button className="btn btn-ghost" onClick={()=>setShowStart(false)}>キャンセル</button>
@@ -1233,7 +1856,7 @@ function WhiteboardTab({ teacher, toast }) {
 }
 
 /* ── 生徒：ホワイトボード視聴（Broadcast版） ── */
-function WhiteboardViewer({ session, nickname }) {
+function WhiteboardViewer({ session, student, onEnd }) {
   const canvasRef=useRef(null);
   const [ended,setEnded]=useState(false);
 
@@ -1241,11 +1864,7 @@ function WhiteboardViewer({ session, nickname }) {
     if(!supabase||!session)return;
     const c=canvasRef.current; if(!c)return;
     c.width=900; c.height=600;
-
-    /* Broadcastチャンネルを購読 – DBのReplication設定不要 */
-    const ch=supabase.channel('wb:'+session.access_code,{
-      config:{broadcast:{self:false}}
-    })
+    const ch=supabase.channel('wb:'+session.access_code,{config:{broadcast:{self:false}}})
     .on('broadcast',{event:'snapshot'},msg=>{
       const data=msg.payload?.data; if(!data)return;
       const img=new Image();
@@ -1257,14 +1876,12 @@ function WhiteboardViewer({ session, nickname }) {
       img.src=data;
     })
     .on('broadcast',{event:'clear'},()=>{
-      const ctx=c.getContext('2d');
-      ctx.clearRect(0,0,c.width,c.height);
+      c.getContext('2d').clearRect(0,0,c.width,c.height);
     })
     .on('broadcast',{event:'end'},()=>{
       setEnded(true);
     })
     .subscribe();
-
     return()=>{ supabase.removeChannel(ch); };
   },[session]);
 
@@ -1273,7 +1890,7 @@ function WhiteboardViewer({ session, nickname }) {
       <div className="done-icon">📺</div>
       <div className="done-title">配信終了</div>
       <div className="done-sub">先生が配信を終了しました。<br/>お疲れ様でした！</div>
-      <button className="btn btn-ghost mt-16" onClick={()=>window.location.reload()}>トップに戻る</button>
+      <button className="btn btn-ghost mt-16" onClick={onEnd}>ダッシュボードへ戻る</button>
     </div>
   );
 
@@ -1282,12 +1899,190 @@ function WhiteboardViewer({ session, nickname }) {
       <div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
         <div className="live-badge"><span className="live-dot"/>LIVE 視聴中</div>
         <div style={{fontFamily:'Noto Serif JP',fontSize:16,fontWeight:700,color:'var(--crimson-dk)'}}>先生のホワイトボード</div>
-        <div style={{marginLeft:'auto',fontSize:13,color:'var(--stone)'}}>👤 {nickname}</div>
+        <div style={{marginLeft:'auto',fontSize:13,color:'var(--stone)'}}>🧑‍🎓 {student?.displayName}</div>
+        <button className="btn btn-ghost btn-sm" onClick={onEnd}>← 戻る</button>
       </div>
       <div style={{borderRadius:14,overflow:'hidden',boxShadow:'0 2px 12px var(--shadow)'}}>
         <canvas ref={canvasRef} style={{width:'100%',display:'block',background:'white'}}/>
       </div>
       <div style={{fontSize:12,color:'var(--stone)',textAlign:'center'}}>先生が書いた内容がリアルタイムで表示されます</div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════
+   生徒ダッシュボード
+══════════════════════════════════ */
+function StudentDashboard({ student, onLogout, toast }) {
+  const [activeTab, setActiveTab] = useState('task');
+  const [perms, setPerms] = useState({ wb_allowed: false, chat_allowed: false });
+  const [liveSession, setLiveSession] = useState(null);
+  const [permLoading, setPermLoading] = useState(true);
+
+  useEffect(() => {
+    const loadPerms = async () => {
+      try {
+        const p = await DB.getStudentPermissions(student.studentId);
+        setPerms(p || { wb_allowed: false, chat_allowed: false });
+      } catch(e) {}
+      finally { setPermLoading(false); }
+    };
+    loadPerms();
+    /* 30秒ごとに権限をチェック */
+    const iv = setInterval(loadPerms, 30000);
+    return () => clearInterval(iv);
+  }, [student.studentId]);
+
+  if (liveSession) {
+    return <WhiteboardViewer session={liveSession} student={student} onEnd={()=>setLiveSession(null)}/>;
+  }
+
+  const roomId = [student.studentId, '__teacher__'].join('_room_');
+
+  return (
+    <div className="main">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20,flexWrap:'wrap',gap:10}}>
+        <div style={{fontFamily:'Noto Serif JP',fontSize:20,fontWeight:700,color:'var(--crimson-dk)'}}>
+          🧑‍🎓 {student.displayName}
+        </div>
+        <button className="btn btn-ghost btn-sm" style={{color:'var(--crimson)'}} onClick={onLogout}>ログアウト</button>
+      </div>
+
+      <div className="student-dash-tabs">
+        <button className={`student-dash-tab ${activeTab==='task'?'active':''}`} onClick={()=>setActiveTab('task')}>📝 課題を解く</button>
+        {perms.wb_allowed && <button className={`student-dash-tab ${activeTab==='wb'?'active':''}`} onClick={()=>setActiveTab('wb')}>🖊 板書を見る</button>}
+        {perms.chat_allowed && <button className={`student-dash-tab ${activeTab==='chat'?'active':''}`} onClick={()=>setActiveTab('chat')}>💬 チャット</button>}
+      </div>
+
+      {activeTab==='task' && (
+        <StudentTaskTab student={student} toast={toast}/>
+      )}
+
+      {activeTab==='wb' && perms.wb_allowed && (
+        <StudentWbTab student={student} toast={toast} onWatch={setLiveSession}/>
+      )}
+
+      {activeTab==='chat' && perms.chat_allowed && (
+        <div>
+          <ChatPanel
+            roomId={`student_teacher_${student.studentId}`}
+            myId={student.studentId}
+            myName={student.displayName}
+            isTeacher={false}
+          />
+        </div>
+      )}
+
+      {permLoading && (
+        <div style={{textAlign:'center',padding:'10px',color:'var(--stone)',fontSize:12}}>
+          <span className="spinner dark" style={{width:14,height:14,borderWidth:2}}/> 権限を確認中…
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* 生徒：課題タブ */
+function StudentTaskTab({ student, toast }) {
+  const [code, setCode] = useState('');
+  const [nick, setNick] = useState(student.displayName);
+  const [err, setErr] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [task, setTask] = useState(null);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handle = async () => {
+    const trimmed = code.trim().toUpperCase();
+    if (trimmed.length < 4) { setErr('課題コードを入力してください'); return; }
+    setLoading(true); setErr('');
+    try {
+      const t = await DB.findTaskByCode(trimmed);
+      if (!t) { setErr('課題が見つかりません。コードを確認してください。'); return; }
+      setTask(t);
+    } catch(e) { setErr('エラー: ' + e.message); }
+    finally { setLoading(false); }
+  };
+
+  if (task && !submitted) {
+    return (
+      <div>
+        <button className="btn btn-ghost btn-sm" style={{marginBottom:16}} onClick={()=>setTask(null)}>← 課題選択へ戻る</button>
+        <AnswerSheet task={task} nickname={nick} onSubmit={()=>setSubmitted(true)}/>
+      </div>
+    );
+  }
+
+  if (submitted) {
+    return (
+      <div className="done-page">
+        <div className="done-icon">🎉</div>
+        <div className="done-title">提出完了！</div>
+        <div className="done-sub">{nick} さんの回答を受け付けました。<br/>お疲れ様でした！</div>
+        {(task?.explanationText||task?.explanationImageUrl)&&(
+          <div className="explanation-box" style={{textAlign:'left',width:'100%',maxWidth:600}}>
+            <div className="explanation-title">💡 解説</div>
+            {task.explanationText&&<div className="explanation-text">{task.explanationText}</div>}
+            {task.explanationImageUrl&&<img src={task.explanationImageUrl} alt="解説画像" className="explanation-img"/>}
+          </div>
+        )}
+        <button className="btn btn-gold" onClick={()=>{setTask(null);setSubmitted(false);setCode('');}}>別の課題を解く</button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{maxWidth:480}}>
+      <div style={{fontFamily:'Noto Serif JP',fontSize:20,fontWeight:700,color:'var(--crimson-dk)',marginBottom:20}}>📝 課題コードを入力</div>
+      <div className="form-group">
+        <label className="form-label">課題コード</label>
+        <input className="code-input" style={{fontSize:22,padding:12}} placeholder="例: AB1234" value={code} maxLength={8}
+          onChange={e=>{setCode(e.target.value.toUpperCase());setErr('');}}
+          onKeyDown={e=>e.key==='Enter'&&handle()}/>
+      </div>
+      <div className="form-group">
+        <label className="form-label">ニックネーム</label>
+        <input className="form-input" value={nick} onChange={e=>setNick(e.target.value)} maxLength={20}/>
+      </div>
+      {err && <div style={{color:'var(--crimson)',fontSize:13,marginBottom:12}}>{err}</div>}
+      <button className="btn btn-primary btn-lg btn-full" onClick={handle} disabled={loading}>
+        {loading?<><span className="spinner"/> 検索中…</>:'開く →'}
+      </button>
+    </div>
+  );
+}
+
+/* 生徒：板書タブ */
+function StudentWbTab({ student, toast, onWatch }) {
+  const [code, setCode] = useState('');
+  const [err, setErr] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handle = async () => {
+    const trimmed = code.trim().toUpperCase();
+    if (trimmed.length < 4) { setErr('LIVEコードを入力してください'); return; }
+    setLoading(true); setErr('');
+    try {
+      const session = await DB.findWbSession(trimmed);
+      if (!session) { setErr('配信が見つかりません。コードを確認してください。'); return; }
+      onWatch(session);
+    } catch(e) { setErr('エラー: ' + e.message); }
+    finally { setLoading(false); }
+  };
+
+  return (
+    <div style={{maxWidth:480}}>
+      <div style={{fontFamily:'Noto Serif JP',fontSize:20,fontWeight:700,color:'var(--crimson-dk)',marginBottom:20}}>🖊 板書のLIVEコードを入力</div>
+      <div className="form-group">
+        <label className="form-label">LIVEコード</label>
+        <input className="code-input" style={{fontSize:22,padding:12}} placeholder="例: XY5678" value={code} maxLength={8}
+          onChange={e=>{setCode(e.target.value.toUpperCase());setErr('');}}
+          onKeyDown={e=>e.key==='Enter'&&handle()}/>
+      </div>
+      {err && <div style={{color:'var(--crimson)',fontSize:13,marginBottom:12}}>{err}</div>}
+      <button className="btn btn-live btn-lg btn-full" onClick={handle} disabled={loading}>
+        {loading?<><span className="spinner"/> 接続中…</>:'📺 板書を見る'}
+      </button>
+      <div style={{fontSize:12,color:'var(--stone)',marginTop:12}}>先生からLIVEコードを教えてもらってください</div>
     </div>
   );
 }
@@ -1302,7 +2097,6 @@ function TaskCreator({ teacher, onDone, toast }) {
   const [mode,setMode]=useState('text'); const [step,setStep]=useState(1);
   const [saving,setSaving]=useState(false);
   const [showLabelModal,setShowLabelModal]=useState(false); const [pendingField,setPendingField]=useState(null); const [labelInput,setLabelInput]=useState('');
-  /* 解説 */
   const [expText,setExpText]=useState(''); const [expImg,setExpImg]=useState(null);
 
   const canvasRef=useRef(null); const fileRef=useRef(null); const expImgRef=useRef(null);
@@ -1329,7 +2123,6 @@ function TaskCreator({ teacher, onDone, toast }) {
   };
 
   const drawRect=drawing?{left:Math.min(drawing.x0,drawing.x1)+'%',top:Math.min(drawing.y0,drawing.y1)+'%',width:Math.abs(drawing.x1-drawing.x0)+'%',height:Math.abs(drawing.y1-drawing.y0)+'%'}:null;
-
   const stepLabels=['課題情報','プリントアップロード','回答欄の配置','解説を設定'];
 
   return (
@@ -1345,7 +2138,6 @@ function TaskCreator({ teacher, onDone, toast }) {
         ))}
       </div>
 
-      {/* Step1: 課題情報 */}
       {step===1&&(
         <div className="form-box" style={{maxWidth:560}}>
           <div className="form-title">① 課題情報を入力</div>
@@ -1355,7 +2147,6 @@ function TaskCreator({ teacher, onDone, toast }) {
         </div>
       )}
 
-      {/* Step2: Upload */}
       {step===2&&(
         <div className="form-box" style={{maxWidth:560}}>
           <div className="form-title">② プリントをアップロード</div>
@@ -1370,7 +2161,6 @@ function TaskCreator({ teacher, onDone, toast }) {
         </div>
       )}
 
-      {/* Step3: Fields */}
       {step===3&&(
         <>
           <div className="creator-layout">
@@ -1407,12 +2197,11 @@ function TaskCreator({ teacher, onDone, toast }) {
         </>
       )}
 
-      {/* Step4: 解説 */}
       {step===4&&(
         <div className="form-box" style={{maxWidth:640}}>
           <div className="form-title">④ 解説を設定（任意）</div>
           <div style={{fontSize:13,color:'var(--stone)',marginBottom:20,lineHeight:1.8}}>
-            生徒が回答を提出した後に表示される解説です。設定しない場合は提出完了画面のみ表示されます。
+            生徒が回答を提出した後に表示される解説です。
           </div>
           <div className="form-group">
             <label className="form-label">解説テキスト</label>
@@ -1445,8 +2234,8 @@ function TaskCreator({ teacher, onDone, toast }) {
         <div className="modal-overlay" onClick={()=>setShowLabelModal(false)}>
           <div className="modal" onClick={e=>e.stopPropagation()}>
             <div className="modal-title">回答欄のラベルを設定</div>
-            <div className="form-group"><label className="form-label">ラベル（例: 問1、(ア)など）</label><input className="form-input" value={labelInput} onChange={e=>setLabelInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&confirmLabel()} autoFocus/></div>
-            <div className="form-group"><label className="form-label">種類</label><select className="form-select" value={pendingField?.type||mode} onChange={e=>setPendingField(f=>({...f,type:e.target.value}))}><option value="text">テキスト（文字・式）</option><option value="number">数値</option></select></div>
+            <div className="form-group"><label className="form-label">ラベル</label><input className="form-input" value={labelInput} onChange={e=>setLabelInput(e.target.value)} onKeyDown={e=>e.key==='Enter'&&confirmLabel()} autoFocus/></div>
+            <div className="form-group"><label className="form-label">種類</label><select className="form-select" value={pendingField?.type||mode} onChange={e=>setPendingField(f=>({...f,type:e.target.value}))}><option value="text">テキスト</option><option value="number">数値</option></select></div>
             <div className="modal-actions"><button className="btn btn-ghost" onClick={()=>setShowLabelModal(false)}>キャンセル</button><button className="btn btn-primary" onClick={confirmLabel}>決定</button></div>
           </div>
         </div>
@@ -1490,53 +2279,8 @@ function SubmissionReviewer({ task, onBack }) {
 }
 
 /* ══════════════════════════════════
-   生徒フロー
+   回答シート（ログイン生徒向け）
 ══════════════════════════════════ */
-function StudentCodeEntry({ onEnter, onWatchLive, toast }) {
-  const [code,setCode]=useState(''); const [nick,setNick]=useState(''); const [err,setErr]=useState(''); const [loading,setLoading]=useState(false);
-
-  const handle = async () => {
-    const trimmed=code.trim().toUpperCase();
-    if(trimmed.length<4){setErr('課題コードを入力してください');return;}
-    if(!nick.trim()){setErr('ニックネームを入力してください');return;}
-    setLoading(true); setErr('');
-    try {
-      // まずホワイトボードセッションを確認
-      const session = await DB.findWbSession(trimmed);
-      if (session){onWatchLive(session, nick.trim()); return;}
-      // 通常の課題を確認
-      const task = await DB.findTaskByCode(trimmed);
-      if(!task){setErr('課題が見つかりません。コードを確認してください。');return;}
-      onEnter(task, nick.trim());
-    } catch(e){setErr('エラーが発生しました: '+e.message);}
-    finally{setLoading(false);}
-  };
-
-  return (
-    <div className="code-entry">
-      <Kamon size={72}/>
-      <div className="code-title">コードを入力</div>
-      <ConfigBanner/>
-      <input className="code-input" placeholder="例: AB1234" value={code} maxLength={8}
-        onChange={e=>{setCode(e.target.value.toUpperCase());setErr('');}}
-        onKeyDown={e=>e.key==='Enter'&&handle()}/>
-      <div className="form-group" style={{textAlign:'left'}}>
-        <label className="form-label">ニックネーム</label>
-        <input className="form-input" placeholder="例: たろう" value={nick}
-          onChange={e=>{setNick(e.target.value);setErr('');}}
-          onKeyDown={e=>e.key==='Enter'&&handle()} maxLength={20}/>
-        <div className="form-hint">本名は不要です（最大20文字）</div>
-      </div>
-      {err&&<div style={{color:'var(--crimson)',fontSize:13}}>{err}</div>}
-      <button className="btn btn-primary btn-lg btn-full" onClick={handle} disabled={loading}>
-        {loading?<><span className="spinner"/> 検索中…</>:'開く →'}
-      </button>
-      <div style={{fontSize:12,color:'var(--stone)'}}>課題コードまたはホワイトボードのLIVEコードを入力してください</div>
-    </div>
-  );
-}
-
-/* ── 生徒：回答シート ── */
 function AnswerSheet({ task, nickname, onSubmit }) {
   const [answers,setAnswers]=useState({}); const [submitted,setSubmitted]=useState(false); const [loading,setLoading]=useState(false);
   const fields=task.answerFields||[];
@@ -1550,25 +2294,6 @@ function AnswerSheet({ task, nickname, onSubmit }) {
     catch(e){alert('提出に失敗しました: '+e.message);}
     finally{setLoading(false);}
   };
-
-  if(submitted) return (
-    <div className="answer-sheet-wrap">
-      <div className="done-page" style={{padding:'40px 24px'}}>
-        <div className="done-icon">🎉</div>
-        <div className="done-title">提出完了！</div>
-        <div className="done-sub">{nickname} さんの回答を受け付けました。<br/>お疲れ様でした！</div>
-      </div>
-      {/* 解説表示 */}
-      {(task.explanationText||task.explanationImageUrl)&&(
-        <div className="explanation-box">
-          <div className="explanation-title">💡 解説</div>
-          {task.explanationText&&<div className="explanation-text">{task.explanationText}</div>}
-          {task.explanationImageUrl&&<img src={task.explanationImageUrl} alt="解説画像" className="explanation-img"/>}
-        </div>
-      )}
-      <button className="btn btn-ghost btn-full" onClick={()=>window.location.reload()}>トップに戻る</button>
-    </div>
-  );
 
   return (
     <div className="answer-sheet-wrap">
@@ -1587,7 +2312,7 @@ function AnswerSheet({ task, nickname, onSubmit }) {
       </div>
       {fields.length>0&&(
         <div className="side-panel">
-          <div className="side-panel-title">回答一覧（入力補助）</div>
+          <div className="side-panel-title">回答一覧</div>
           {fields.map((f,i)=>(
             <div key={f.id} className="form-group" style={{marginBottom:10}}>
               <label className="form-label">{i+1}. {f.label}<span className={`type-pill ${f.type==='number'?'type-number':'type-text'}`} style={{marginLeft:6}}>{f.type==='number'?'数値':'テキスト'}</span></label>
@@ -1601,7 +2326,7 @@ function AnswerSheet({ task, nickname, onSubmit }) {
           <div className="progress-text">{filled} / {total} 問 入力済み</div>
           <div className="progress-bar-bg"><div className="progress-bar-fill" style={{width:pct+'%'}}/></div>
         </div>
-        <button className="btn btn-primary btn-lg" onClick={handleSubmit} disabled={loading}>
+        <button className="btn btn-primary btn-lg" onClick={handleSubmit} disabled={loading||submitted}>
           {loading?<><span className="spinner"/> 提出中…</>:'提出する 📩'}
         </button>
       </div>
@@ -1645,20 +2370,11 @@ function TaskEditor({ task, onDone, toast }) {
         <div style={{fontFamily:'Noto Serif JP',fontSize:22,fontWeight:700,color:'var(--crimson-dk)'}}>✏️ 課題を編集</div>
       </div>
       <div className="form-box" style={{maxWidth:640}}>
-        <div className="form-group">
-          <label className="form-label">課題タイトル <span style={{color:'var(--crimson)'}}>*</span></label>
-          <input className="form-input" value={title} onChange={e=>setTitle(e.target.value)}/>
-        </div>
-        <div className="form-group">
-          <label className="form-label">説明（任意）</label>
-          <textarea className="form-textarea" value={desc} onChange={e=>setDesc(e.target.value)}/>
-        </div>
+        <div className="form-group"><label className="form-label">課題タイトル <span style={{color:'var(--crimson)'}}>*</span></label><input className="form-input" value={title} onChange={e=>setTitle(e.target.value)}/></div>
+        <div className="form-group"><label className="form-label">説明（任意）</label><textarea className="form-textarea" value={desc} onChange={e=>setDesc(e.target.value)}/></div>
         <div className="divider"/>
         <div style={{fontFamily:'Noto Serif JP',fontSize:15,fontWeight:700,color:'var(--gold)',marginBottom:14}}>💡 解説の編集</div>
-        <div className="form-group">
-          <label className="form-label">解説テキスト</label>
-          <textarea className="form-textarea" style={{minHeight:120}} placeholder="例：両辺に3をかけて…" value={expText} onChange={e=>setExpText(e.target.value)}/>
-        </div>
+        <div className="form-group"><label className="form-label">解説テキスト</label><textarea className="form-textarea" style={{minHeight:120}} value={expText} onChange={e=>setExpText(e.target.value)}/></div>
         <div className="form-group">
           <label className="form-label">解説画像</label>
           {expImg?(
@@ -1668,7 +2384,7 @@ function TaskEditor({ task, onDone, toast }) {
             </div>
           ):(
             <div className="upload-zone" onClick={()=>expImgRef.current.click()} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();handleExpImg(e.dataTransfer.files?.[0]);}}>
-              <div className="big">🖼</div><p>解説画像をアップロード（PNG/JPG）</p>
+              <div className="big">🖼</div><p>解説画像をアップロード</p>
               <input ref={expImgRef} type="file" accept="image/*" style={{display:'none'}} onChange={e=>handleExpImg(e.target.files?.[0])}/>
             </div>
           )}
@@ -1689,23 +2405,25 @@ function TaskEditor({ task, onDone, toast }) {
 ══════════════════════════════════ */
 function App() {
   const toast=useToast();
+
+  /* セッション復元 */
   const savedSession=(()=>{try{return JSON.parse(localStorage.getItem('kogetsu_session')||'null');}catch{return null;}})();
   const [role,setRole]             = useState(savedSession?.role||null);
   const [teacher,setTeacher]       = useState(savedSession?.teacher||null);
+  const [student,setStudent]       = useState(savedSession?.student||null);
   const [view,setView]             = useState('dashboard');
   const [reviewTask,setReviewTask] = useState(null);
   const [editTask,setEditTask]     = useState(null);
-  const [studentTask,setStudentTask] = useState(null);
-  const [studentNick,setStudentNick] = useState('');
-  const [liveSession,setLiveSession] = useState(null);
 
   useEffect(()=>{
     if(role==='teacher'&&teacher){ localStorage.setItem('kogetsu_session',JSON.stringify({role,teacher})); }
+    else if(role==='student'&&student){ localStorage.setItem('kogetsu_session',JSON.stringify({role,student})); }
     else{ localStorage.removeItem('kogetsu_session'); }
-  },[role,teacher]);
+  },[role,teacher,student]);
 
-  const goHome=()=>{ setRole(null); setStudentTask(null); setLiveSession(null); };
-  const handleLogout=()=>{ localStorage.removeItem('kogetsu_session'); setTeacher(null); setRole(null); setView('dashboard'); };
+  const goHome=()=>{ setRole(null); setStudent(null); setTeacher(null); };
+  const handleTeacherLogout=()=>{ localStorage.removeItem('kogetsu_session'); setTeacher(null); setRole(null); setView('dashboard'); };
+  const handleStudentLogout=()=>{ localStorage.removeItem('kogetsu_session'); setStudent(null); setRole(null); };
 
   const renderTeacher=()=>{
     if(!teacher) return <TeacherAuth onLogin={u=>{setTeacher(u);setView('dashboard');}} toast={toast}/>;
@@ -1716,18 +2434,15 @@ function App() {
       onCreate={()=>setView('create')}
       onEdit={t=>{setEditTask(t);setView('edit');}}
       onReview={t=>{setReviewTask(t);setView('review');}}
-      onLogout={handleLogout}/>;
+      onLogout={handleTeacherLogout}/>;
   };
 
   const renderStudent=()=>{
-    if(liveSession) return <WhiteboardViewer session={liveSession} nickname={studentNick}/>;
-    if(studentTask) return <div className="main"><AnswerSheet task={studentTask} nickname={studentNick} onSubmit={()=>{}}/></div>;
-    return <StudentCodeEntry toast={toast}
-      onEnter={(task,nick)=>{setStudentTask(task);setStudentNick(nick);}}
-      onWatchLive={(session,nick)=>{setLiveSession(session);setStudentNick(nick);}}/>;
+    if(!student) return <StudentAuth onLogin={s=>{setStudent(s);}} toast={toast}/>;
+    return <StudentDashboard student={student} onLogout={handleStudentLogout} toast={toast}/>;
   };
 
-  if(!role)return(
+  if(!role) return(
     <div className="app">
       <Header role={null} onRoleChange={setRole} onHome={goHome}/>
       <div className="landing">
@@ -1735,8 +2450,18 @@ function App() {
         <div className="landing-title">紅月計算塾</div>
         <div className="landing-subtitle">学習支援ボランティアのための<br/>デジタル課題プラットフォーム</div>
         <div className="landing-cards">
-          <div className="landing-card" onClick={()=>setRole('teacher')}><div className="card-icon teacher">📚</div><div className="card-label">教える側</div><div className="card-desc">問題プリントをアップロードし、課題の作成・採点・板書配信ができます。</div><div className="card-cta">ログインして始める →</div></div>
-          <div className="landing-card" onClick={()=>setRole('student')}><div className="card-icon student">✏️</div><div className="card-label">生徒</div><div className="card-desc">課題コードで回答提出、またはLIVEコードで先生の板書をリアルタイム視聴。</div><div className="card-cta">コードを入力して開く →</div></div>
+          <div className="landing-card" onClick={()=>setRole('teacher')}>
+            <div className="card-icon teacher">📚</div>
+            <div className="card-label">教える側</div>
+            <div className="card-desc">問題プリントをアップロードし、課題の作成・採点・板書配信ができます。</div>
+            <div className="card-cta">ログインして始める →</div>
+          </div>
+          <div className="landing-card" onClick={()=>setRole('student')}>
+            <div className="card-icon student">✏️</div>
+            <div className="card-label">生徒</div>
+            <div className="card-desc">ログインして課題提出、板書視聴、先生とのチャットができます。</div>
+            <div className="card-cta">ログインして開く →</div>
+          </div>
         </div>
       </div>
       <Toasts toasts={toast.toasts}/>
@@ -1745,7 +2470,9 @@ function App() {
 
   return(
     <div className="app">
-      <Header role={role} onRoleChange={r=>{setRole(r);setStudentTask(null);setTeacher(null);setView('dashboard');setLiveSession(null);}} onHome={goHome}/>
+      <Header role={role}
+        onRoleChange={r=>{setRole(r);setStudent(null);setTeacher(null);setView('dashboard');}}
+        onHome={goHome}/>
       {role==='teacher'?renderTeacher():renderStudent()}
       <Toasts toasts={toast.toasts}/>
     </div>
