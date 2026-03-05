@@ -154,7 +154,7 @@ html,body,#root{height:100%;width:100%;font-family:'Noto Sans JP',sans-serif;bac
 .sheet-canvas-wrapper{background:var(--white);border:2px solid var(--paper-dk);border-radius:14px;overflow:hidden;position:relative;}
 .sheet-canvas{position:relative;width:100%;}
 .sheet-canvas img{width:100%;height:auto;display:block;}
-.answer-input{position:absolute;background:rgba(255,255,255,.92);border:2.5px solid var(--gold);border-radius:5px;padding:4px 8px;font-family:'DM Mono',monospace;font-size:15px;color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s;width:100%;height:100%;}
+.answer-input{position:absolute;background:transparent;border:2.5px solid var(--gold);border-radius:5px;padding:4px 8px;font-family:'DM Mono',monospace;font-size:15px;color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s;width:100%;height:100%;}
 .answer-input:focus{border-color:var(--crimson);box-shadow:0 0 0 3px rgba(155,27,48,.15);}
 .answer-input:disabled{background:rgba(235,235,235,.8);border-color:var(--stone-lt);color:var(--stone);cursor:not-allowed;}
 .sheet-submit-bar{background:var(--white);border:2px solid var(--paper-dk);border-radius:14px;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
@@ -2065,10 +2065,15 @@ function StudentRegister({ onDone, toast }) {
 
 /* ── チャットコンポーネント（共用・ルーム切替対応） ── */
 function ChatPanel({ myId, myLabel, senderType, teachers, toast }) {
-  const rooms = [
-    { id: 'general', label: '🌐 全体チャット' },
-    ...(teachers||[]).map(t=>({ id:'teacher_'+t.teacher_id, label:'👩‍🏫 '+t.teacher_id }))
-  ];
+  const rooms = senderType === 'teacher'
+    ? [
+        { id: 'general', label: '🌐 全体チャット' },
+        ...(teachers||[]).map(t=>({ id:'teacher_'+t.teacher_id, label:'👩‍🏫 '+t.teacher_id }))
+      ]
+    : [
+        { id: 'general', label: '🌐 全体チャット' },
+        ...(teachers||[]).map(t=>({ id:'teacher_'+t.teacher_id, label:'✉️ '+t.teacher_id+' 先生へ' }))
+      ];
 
   const [roomId, setRoomId]         = useState('general');
   const [messages, setMessages]     = useState([]);
