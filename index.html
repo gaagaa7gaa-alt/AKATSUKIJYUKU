@@ -515,11 +515,24 @@ const DB = {
   async getStudentPermissions(studentId) {
     if (!supabase) return null;
     const { data } = await supabase.from('student_permissions').select('*').eq('student_id', studentId).maybeSingle();
-    return data || { student_id: studentId, vc_enabled: false, wb_enabled: false };
+    if (!data) return { student_id: studentId, wb_write_enabled: false, vc_enabled: false };
+    /* カラム名の揺れに対応：wb_enabled → wb_write_enabled */
+    return {
+      student_id:        data.student_id,
+      wb_write_enabled:  data.wb_write_enabled ?? data.wb_enabled ?? false,
+      vc_enabled:        data.vc_enabled ?? false,
+    };
   },
-  async setStudentPermissions(studentId, vcEnabled, wbEnabled) {
+  async setStudentPermissions(studentId, wbWriteEnabled, vcEnabled) {
     if (!supabase) throw new Error('Supabase未設定');
-    const { error } = await supabase.from('student_permissions').upsert([{ student_id: studentId, vc_enabled: vcEnabled, wb_enabled: wbEnabled, updated_at: new Date().toISOString() }], { onConflict: 'student_id' });
+    /* 両カラム名で書き込み（DB側のカラム名に合わせて片方が無視されても動く） */
+    const payload = {
+      student_id:       studentId,
+      vc_enabled:       vcEnabled,
+      wb_write_enabled: wbWriteEnabled,
+      updated_at:       new Date().toISOString()
+    };
+    const { error } = await supabase.from('student_permissions').upsert([payload], { onConflict: 'student_id' });
     if (error) throw error;
   },
 
@@ -534,13 +547,14 @@ const DB = {
   },
   async sendChatMessage(msg) {
     if (!supabase) throw new Error('Supabase未設定');
+    const displayName = msg.sender_label || msg.sender_id;
     const { error } = await supabase.from('chat_messages').insert([{
       id:          msg.id,
       room_id:     msg.room_id || 'general',
       sender_id:   msg.sender_id,
       sender_type: msg.sender_type || 'user',
-      sender_name: msg.sender_label || msg.sender_id,
-      sender_label: msg.sender_label,
+      sender_name: displayName,
+      sender_label: displayName,
       content:     msg.content || null,
       image_url:   msg.image_data || null,
       image_data:  msg.image_data || null,
@@ -1137,12 +1151,12 @@ function WhiteboardTab({ teacher, toast }) {
   };
 
   const togglePerm = async (studentId, type) => {
-    const current = perms[studentId] || { vc_enabled: false, wb_enabled: false };
-    const newVc = type === 'vc' ? !current.vc_enabled : current.vc_enabled;
-    const newWb = type === 'wb' ? !current.wb_enabled : current.wb_enabled;
+    const current = perms[studentId] || { wb_write_enabled: false, vc_enabled: false };
+    const newWb = type === 'wb' ? !current.wb_write_enabled : current.wb_write_enabled;
+    const newVc = type === 'vc' ? !current.vc_enabled       : current.vc_enabled;
     try {
-      await DB.setStudentPermissions(studentId, newVc, newWb);
-      setPerms(p => ({ ...p, [studentId]: { ...current, vc_enabled: newVc, wb_enabled: newWb } }));
+      await DB.setStudentPermissions(studentId, newWb, newVc);
+      setPerms(p => ({ ...p, [studentId]: { ...current, wb_write_enabled: newWb, vc_enabled: newVc } }));
       toast.show(`${studentId} の権限を更新しました`, 'success');
     } catch(e) { toast.show('権限更新エラー: '+e.message, 'error'); }
   };
@@ -1365,9 +1379,9 @@ function WhiteboardTab({ teacher, toast }) {
       </div>
 
       <div style={{position:'relative',borderRadius:14,overflow:'hidden',boxShadow:'0 2px 12px var(--shadow)'}}>
-        {/* 背景レイヤー（プリント薄表示） */}
+        {/* 背景レイヤー（プリント薄表示）— アスペクト比を保持 */}
         {selTask?.imageDataUrl&&(
-          <img src={selTask.imageDataUrl} alt="bg" style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'fill',opacity:0.25,pointerEvents:'none'}}/>
+          <img src={selTask.imageDataUrl} alt="bg" style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'contain',opacity:0.25,pointerEvents:'none',background:'white'}}/>
         )}
         <canvas ref={canvasRef} className="wb-canvas"
           style={{width:'100%',cursor:isLive?(tool==='eraser'?'cell':'crosshair'):'not-allowed',opacity:isLive?1:.6,position:'relative',zIndex:1,background:'transparent'}}
@@ -1386,10 +1400,10 @@ function WhiteboardTab({ teacher, toast }) {
 
       {/* 生徒権限管理 */}
       <div style={{background:'var(--white)',border:'2px solid var(--paper-dk)',borderRadius:14,padding:20,marginTop:8}}>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14,flexWrap:'wrap',gap:8}}>
           <div style={{fontFamily:'Noto Serif JP',fontSize:15,fontWeight:700,color:'var(--crimson-dk)'}}>👥 生徒の権限管理</div>
           <div style={{display:'flex',gap:6}}>
-            <button className={`btn btn-sm ${permTab==='wb'?'btn-primary':'btn-ghost'}`} onClick={()=>setPermTab('wb')}>🖊 ホワイトボード</button>
+            <button className={`btn btn-sm ${permTab==='wb'?'btn-primary':'btn-ghost'}`} onClick={()=>setPermTab('wb')}>🖊 板書許可</button>
             <button className={`btn btn-sm ${permTab==='vc'?'btn-primary':'btn-ghost'}`} onClick={()=>setPermTab('vc')}>🎤 VC</button>
           </div>
           <button className="btn btn-ghost btn-sm" onClick={loadStudentsAndPerms}>↻ 更新</button>
@@ -1399,13 +1413,13 @@ function WhiteboardTab({ teacher, toast }) {
         ):(
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
             {students.map(s=>{
-              const p = perms[s.student_id]||{vc_enabled:false,wb_enabled:false};
-              const isOn = permTab==='vc' ? p.vc_enabled : p.wb_enabled;
+              const p = perms[s.student_id]||{wb_write_enabled:false,vc_enabled:false};
+              const isOn = permTab==='vc' ? p.vc_enabled : p.wb_write_enabled;
               return (
                 <div key={s.student_id} className="perm-toggle">
                   <div style={{flex:1}}>
                     <div className="perm-toggle-label">{s.student_id}</div>
-                    <div className="perm-toggle-desc">{permTab==='vc'?'音声通話':'ホワイトボード閲覧'}</div>
+                    <div className="perm-toggle-desc">{permTab==='vc'?'音声通話':'ホワイトボードへの書き込み'}</div>
                   </div>
                   <button className={`toggle-btn ${isOn?'on':'off'}`} onClick={()=>togglePerm(s.student_id, permTab)}>
                     <div className="toggle-knob"/>
@@ -1876,9 +1890,10 @@ function ChatPanel({ myId, myLabel, senderType, teachers, toast }) {
           ):messages.map(m=>{
             const mine = m.sender_id === myId;
             const img  = m.image_data || m.image_url;
+            const displayName = m.sender_label || m.sender_name || m.sender_id;
             return (
               <div key={m.id} className={`chat-msg ${mine?'mine':'theirs'}`}>
-                {!mine&&<div className="chat-meta">{m.sender_label||m.sender_name||m.sender_id}</div>}
+                {!mine&&<div className="chat-meta">{displayName}</div>}
                 <div className="chat-bubble">
                   {m.content&&<div>{m.content}</div>}
                   {img&&<img src={img} alt="画像" onClick={()=>setZoomImg(img)}/>}
@@ -1911,13 +1926,14 @@ function ChatPanel({ myId, myLabel, senderType, teachers, toast }) {
 /* ── 生徒ダッシュボード ── */
 function StudentDashboard({ student, toast, onLogout }) {
   const [activeTab, setActiveTab]   = useState('tasks');
-  const [perms, setPerms]           = useState({ vc_enabled: false, wb_enabled: false });
+  const [perms, setPerms]           = useState({ wb_write_enabled: false, vc_enabled: false });
   const [teachers, setTeachers]     = useState([]);
   const [code,setCode]              = useState('');
   const [err,setErr]                = useState('');
   const [loading,setLoading]        = useState(false);
   const [liveSession, setLiveSession] = useState(null);
   const [currentTask, setCurrentTask] = useState(null);
+  const [showViewer, setShowViewer]   = useState(false); // LIVEを別タブでも維持
 
   useEffect(()=>{
     loadPerms();
@@ -1929,7 +1945,7 @@ function StudentDashboard({ student, toast, onLogout }) {
   const loadPerms = async () => {
     try {
       const p = await DB.getStudentPermissions(student.studentId);
-      setPerms(p || { vc_enabled: false, wb_enabled: false });
+      setPerms(p || { wb_write_enabled: false, vc_enabled: false });
     } catch(e){}
   };
 
@@ -1940,8 +1956,10 @@ function StudentDashboard({ student, toast, onLogout }) {
     try {
       const session = await DB.findWbSession(trimmed);
       if(session){
-        if(!perms.wb_enabled){setErr('ホワイトボードへのアクセスが許可されていません');setLoading(false);return;}
-        setLiveSession(session); return;
+        setLiveSession(session);
+        setShowViewer(true);
+        setActiveTab('live');
+        setLoading(false); return;
       }
       const task = await DB.findTaskByCode(trimmed);
       if(!task){setErr('課題が見つかりません');setLoading(false);return;}
@@ -1950,7 +1968,6 @@ function StudentDashboard({ student, toast, onLogout }) {
     finally{setLoading(false);}
   };
 
-  if(liveSession) return <WhiteboardViewer session={liveSession} nickname={student.studentId} onBack={()=>setLiveSession(null)}/>;
   if(currentTask) return <div className="main"><AnswerSheet task={currentTask} nickname={student.studentId} onSubmit={()=>setCurrentTask(null)}/></div>;
 
   return (
@@ -1965,9 +1982,21 @@ function StudentDashboard({ student, toast, onLogout }) {
 
       <div className="dash-tabs" style={{marginTop:20}}>
         <button className={`dash-tab ${activeTab==='tasks'?'active':''}`} onClick={()=>setActiveTab('tasks')}>📋 課題・ライブ</button>
+        {showViewer&&<button className={`dash-tab ${activeTab==='live'?'active':''}`} onClick={()=>setActiveTab('live')}><span className="live-dot" style={{display:'inline-block',marginRight:4}}/>LIVE視聴中</button>}
         <button className={`dash-tab ${activeTab==='chat'?'active':''}`} onClick={()=>setActiveTab('chat')}>💬 チャット</button>
         <button className={`dash-tab ${activeTab==='vc'?'active':''}`} onClick={()=>setActiveTab('vc')}>🎤 VC</button>
       </div>
+
+      {/* LIVEビューアは常にマウントしてdisplay切替で維持 */}
+      {liveSession&&(
+        <div style={{display: activeTab==='live' ? 'block' : 'none'}}>
+          <WhiteboardViewer
+            session={liveSession}
+            nickname={student.studentId}
+            onBack={()=>{ setLiveSession(null); setShowViewer(false); setActiveTab('tasks'); }}
+          />
+        </div>
+      )}
 
       {activeTab==='tasks'&&(
         <div style={{display:'flex',flexDirection:'column',gap:16}}>
@@ -1988,8 +2017,8 @@ function StudentDashboard({ student, toast, onLogout }) {
           <div style={{background:'var(--white)',border:'2px solid var(--paper-dk)',borderRadius:14,padding:20}}>
             <div style={{fontFamily:'Noto Serif JP',fontSize:15,fontWeight:700,color:'var(--crimson-dk)',marginBottom:10}}>🔓 あなたの権限</div>
             <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
-              <div style={{padding:'8px 14px',borderRadius:20,background:perms.wb_enabled?'#D1FAE5':'var(--paper-dk)',color:perms.wb_enabled?'#065F46':'var(--stone)',fontSize:13,fontWeight:700}}>
-                🖊 ホワイトボード: {perms.wb_enabled?'利用可':'待機中'}
+              <div style={{padding:'8px 14px',borderRadius:20,background:perms.wb_write_enabled?'#D1FAE5':'var(--paper-dk)',color:perms.wb_write_enabled?'#065F46':'var(--stone)',fontSize:13,fontWeight:700}}>
+                🖊 板書参加: {perms.wb_write_enabled?'許可':'待機中'}
               </div>
               <div style={{padding:'8px 14px',borderRadius:20,background:perms.vc_enabled?'#D1FAE5':'var(--paper-dk)',color:perms.vc_enabled?'#065F46':'var(--stone)',fontSize:13,fontWeight:700}}>
                 🎤 VC: {perms.vc_enabled?'利用可':'待機中'}
