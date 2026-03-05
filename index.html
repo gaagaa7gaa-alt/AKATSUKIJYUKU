@@ -321,6 +321,7 @@ html,body,#root{height:100%;width:100%;font-family:'Noto Sans JP',sans-serif;bac
 <body>
 <div id="root"></div>
 <script type="text/babel">
+
 const { useState, useEffect, useRef, useCallback } = React;
 
 /* ══════════════════════════════════
@@ -676,22 +677,25 @@ return (
 /* ══════════════════════════════════
 チャットコンポーネント
 ══════════════════════════════════ */
-/* 画像をリサイズ・圧縮して base64 を返す（Supabase 1MB制限対策） */
-function compressImage(file, maxW=800, maxH=800, quality=0.7) {
-return new Promise((resolve, reject) => {
-const reader = new FileReader();
+/* ══════════════════════════════════
+画像圧縮ユーティリティ
+══════════════════════════════════ */
+function compressImage(file) {
+return new Promise(function(resolve, reject) {
+var reader = new FileReader();
 reader.onerror = reject;
-reader.onload = (ev) => {
-const img = new Image();
+reader.onload = function(ev) {
+var img = new Image();
 img.onerror = reject;
-img.onload = () => {
-let { width, height } = img;
-const ratio = Math.min(maxW / width, maxH / height, 1);
-width  = Math.round(width  * ratio);
-height = Math.round(height * ratio);
-const canvas = document.createElement(‘canvas’);
-canvas.width = width; canvas.height = height;
-canvas.getContext(‘2d’).drawImage(img, 0, 0, width, height);
+img.onload = function() {
+var maxW = 800, maxH = 800, quality = 0.7;
+var w = img.width, h = img.height;
+var ratio = Math.min(maxW / w, maxH / h, 1);
+w = Math.round(w * ratio);
+h = Math.round(h * ratio);
+var canvas = document.createElement(‘canvas’);
+canvas.width = w; canvas.height = h;
+canvas.getContext(‘2d’).drawImage(img, 0, 0, w, h);
 resolve(canvas.toDataURL(‘image/jpeg’, quality));
 };
 img.src = ev.target.result;
@@ -700,104 +704,120 @@ reader.readAsDataURL(file);
 });
 }
 
+/* ══════════════════════════════════
+チャットパネル
+roomId: “chat__<studentId>” で教師・生徒統一
+══════════════════════════════════ */
 function ChatPanel({ roomId, myId, myName, isTeacher, onClose, toastShow }) {
 const [messages, setMessages] = useState([]);
 const [input, setInput]       = useState(’’);
 const [sending, setSending]   = useState(false);
 const [loadErr, setLoadErr]   = useState(’’);
 const [previewImg, setPreviewImg] = useState(null);
-const bodyRef  = useRef(null);
-const fileRef  = useRef(null);
-const pollRef  = useRef(null);
+const bodyRef = useRef(null);
+const fileRef = useRef(null);
+const pollRef = useRef(null);
 
-/* メッセージ取得 */
-const loadMessages = useCallback(async () => {
-try {
-const msgs = await DB.getRecentMessages(roomId);
-setMessages(msgs);
-setLoadErr(’’);
-} catch(e) {
-setLoadErr(’メッセージの取得に失敗しました: ’ + e.message);
-}
-}, [roomId]);
-
-/* 初回ロード＋3秒ポーリング */
-useEffect(() => {
-loadMessages();
-pollRef.current = setInterval(loadMessages, 3000);
-return () => clearInterval(pollRef.current);
-}, [loadMessages]);
-
-/* 新着で自動スクロール */
-useEffect(() => {
+function scrollBottom() {
 if (bodyRef.current) {
 bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
 }
+}
+
+async function fetchMessages() {
+if (!supabase) return;
+try {
+const { data, error } = await supabase
+.from(‘chat_messages’)
+.select(’*’)
+.eq(‘room_id’, roomId)
+.order(‘created_at’, { ascending: true })
+.limit(100);
+if (error) throw error;
+setMessages(data || []);
+setLoadErr(’’);
+} catch(e) {
+setLoadErr(’取得エラー: ’ + e.message);
+}
+}
+
+useEffect(function() {
+fetchMessages();
+pollRef.current = setInterval(fetchMessages, 3000);
+return function() { clearInterval(pollRef.current); };
+}, [roomId]);
+
+useEffect(function() {
+scrollBottom();
 }, [messages]);
 
-/* テキスト・画像共通送信 */
-const send = async (content, type = ‘text’) => {
-const trimmed = type === ‘text’ ? content.trim() : content;
-if (!trimmed) return;
+async function sendMsg(content, msgType) {
+var text = (msgType === ‘text’) ? content.trim() : content;
+if (!text) return;
 setSending(true);
 try {
-await DB.sendChatMessage({
-id:          genId(),
-room_id:     roomId,
-sender_id:   myId,
-sender_name: myName,
-sender_role: isTeacher ? ‘teacher’ : ‘student’,
-content:     trimmed,
-message_type: type,
-created_at:  new Date().toISOString(),
-});
-if (type === ‘text’) setInput(’’);
-await loadMessages();
+if (!supabase) throw new Error(‘Supabase未設定’);
+var row = {
+id:           genId(),
+room_id:      roomId,
+sender_id:    myId,
+sender_name:  myName,
+sender_role:  isTeacher ? ‘teacher’ : ‘student’,
+content:      text,
+message_type: msgType || ‘text’,
+created_at:   new Date().toISOString()
+};
+var result = await supabase.from(‘chat_messages’).insert([row]);
+if (result.error) throw result.error;
+if (msgType === ‘text’) setInput(’’);
+await fetchMessages();
 } catch(e) {
-const msg = ’送信エラー: ’ + e.message;
-if (toastShow) toastShow(msg, ‘error’);
-else alert(msg);
+var errMsg = ’送信エラー: ’ + e.message;
+if (toastShow) toastShow(errMsg, ‘error’);
+else alert(errMsg);
 } finally {
 setSending(false);
 }
-};
+}
 
-/* 画像選択→圧縮→送信 */
-const handleImg = async (file) => {
+async function handleImgFile(file) {
 if (!file) return;
 setSending(true);
 try {
-const compressed = await compressImage(file);
-await send(compressed, ‘image’);
+var compressed = await compressImage(file);
+await sendMsg(compressed, ‘image’);
 } catch(e) {
-const msg = ’画像の処理に失敗しました: ’ + e.message;
-if (toastShow) toastShow(msg, ‘error’);
-else alert(msg);
+var errMsg = ’画像エラー: ’ + e.message;
+if (toastShow) toastShow(errMsg, ‘error’);
+else alert(errMsg);
 } finally {
 setSending(false);
-/* input をリセットして同じファイルを再送できるようにする */
 if (fileRef.current) fileRef.current.value = ‘’;
 }
-};
+}
 
-const handleKey = (e) => {
+function handleKey(e) {
 if (e.key === ‘Enter’ && !e.shiftKey) {
 e.preventDefault();
-send(input);
+sendMsg(input, ‘text’);
 }
-};
+}
 
-let lastDate = ‘’;
+var displayTitle = isTeacher
+? (’チャット: ’ + roomId.replace(‘chat__’, ‘’))
+: ‘先生とのチャット’;
+
+var lastDate = ‘’;
 
 return (
 <div className="chat-wrap">
 <div className="chat-header">
 <span style={{fontSize:18}}>💬</span>
-<div className="chat-header-title">
-{isTeacher ? `チャット: ${roomId.replace('chat__','')}` : ‘先生とのチャット’}
-</div>
+<div className="chat-header-title">{displayTitle}</div>
 <div style={{flex:1}}/>
-{onClose && <button className="btn btn-ghost btn-sm" onClick={onClose}>✕ 閉じる</button>}
+{onClose && (
+<button className="btn btn-ghost btn-sm" onClick={onClose}>✕ 閉じる</button>
+)}
 </div>
 
 ```
@@ -813,15 +833,17 @@ return (
         メッセージはまだありません
       </div>
     )}
-    {messages.map((msg) => {
-      const isMine   = msg.sender_id === myId;
-      const dateStr  = fmtDate(msg.created_at);
-      const showDate = dateStr !== lastDate;
+    {messages.map(function(msg) {
+      var isMine = (msg.sender_id === myId);
+      var dateStr = fmtDate(msg.created_at);
+      var showDate = (dateStr !== lastDate);
       lastDate = dateStr;
       return (
         <React.Fragment key={msg.id}>
-          {showDate && <div className="chat-day-divider">{dateStr}</div>}
-          <div className={`chat-msg ${isMine ? 'mine' : 'theirs'}`}>
+          {showDate && (
+            <div className="chat-day-divider">{dateStr}</div>
+          )}
+          <div className={'chat-msg ' + (isMine ? 'mine' : 'theirs')}>
             {!isMine && (
               <div style={{fontSize:11,color:'var(--stone)',marginBottom:2,fontWeight:700}}>
                 {msg.sender_name}
@@ -832,7 +854,7 @@ return (
                 src={msg.content}
                 className="chat-img"
                 alt="画像"
-                onClick={() => setPreviewImg(msg.content)}
+                onClick={function() { setPreviewImg(msg.content); }}
               />
             ) : (
               <div className="chat-bubble">{msg.content}</div>
@@ -847,7 +869,7 @@ return (
   <div className="chat-input-bar">
     <button
       className="chat-img-btn"
-      onClick={() => fileRef.current.click()}
+      onClick={function() { fileRef.current.click(); }}
       title="画像を送る"
       disabled={sending}
     >🖼</button>
@@ -856,20 +878,20 @@ return (
       type="file"
       accept="image/*"
       style={{display:'none'}}
-      onChange={e => handleImg(e.target.files?.[0])}
+      onChange={function(e) { handleImgFile(e.target.files && e.target.files[0]); }}
     />
     <textarea
       className="chat-input"
       placeholder="メッセージを入力… (Enter で送信)"
       value={input}
-      onChange={e => setInput(e.target.value)}
+      onChange={function(e) { setInput(e.target.value); }}
       onKeyDown={handleKey}
       rows={1}
       disabled={sending}
     />
     <button
       className="chat-send-btn"
-      onClick={() => send(input)}
+      onClick={function() { sendMsg(input, 'text'); }}
       disabled={sending || !input.trim()}
     >
       {sending
@@ -879,7 +901,7 @@ return (
   </div>
 
   {previewImg && (
-    <div className="img-preview-overlay" onClick={() => setPreviewImg(null)}>
+    <div className="img-preview-overlay" onClick={function() { setPreviewImg(null); }}>
       <img src={previewImg} alt="プレビュー"/>
     </div>
   )}
@@ -889,24 +911,33 @@ return (
 );
 }
 
-/* 教師側：生徒一覧チャット */
+/* ══════════════════════════════════
+教師側：生徒一覧チャット
+roomId = “chat__<studentId>” で統一
+══════════════════════════════════ */
 function TeacherChatTab({ teacher, toast }) {
 const [students, setStudents] = useState([]);
 const [selStudent, setSelStudent] = useState(null);
 const [loading, setLoading] = useState(true);
 
-useEffect(() => {
-DB.getStudents().then(s => { setStudents(s.filter(x=>x.is_approved)); setLoading(false); })
-.catch(e => { toast.show(‘取得エラー’,‘error’); setLoading(false); });
+useEffect(function() {
+DB.getStudents()
+.then(function(s) {
+setStudents(s.filter(function(x) { return x.is_approved; }));
+setLoading(false);
+})
+.catch(function(e) {
+toast.show(‘取得エラー’, ‘error’);
+setLoading(false);
+});
 }, []);
 
 if (selStudent) {
-/* ★ 生徒側と同じ式: “chat__<studentId>” */
-const roomId = `chat__${selStudent.student_id}`;
+var roomId = ‘chat__’ + selStudent.student_id;
 return (
 <div>
 <div style={{display:‘flex’,alignItems:‘center’,gap:12,marginBottom:16}}>
-<button className=“btn btn-ghost btn-sm” onClick={()=>setSelStudent(null)}>← 生徒一覧</button>
+<button className=“btn btn-ghost btn-sm” onClick={function() { setSelStudent(null); }}>← 生徒一覧</button>
 <div style={{fontFamily:‘Noto Serif JP’,fontSize:18,fontWeight:700,color:‘var(–crimson-dk)’}}>
 💬 {selStudent.display_name || selStudent.student_id}
 </div>
@@ -916,7 +947,7 @@ roomId={roomId}
 myId={teacher.teacherId}
 myName={teacher.teacherId}
 isTeacher={true}
-onClose={()=>setSelStudent(null)}
+onClose={function() { setSelStudent(null); }}
 toastShow={toast.show}
 />
 </div>
@@ -927,7 +958,9 @@ return (
 <div>
 <div className="dashboard-title" style={{marginBottom:20}}>💬 チャット — 生徒を選択</div>
 {loading ? (
-<div style={{textAlign:‘center’,padding:‘40px’}}><span className="spinner dark" style={{width:28,height:28,borderWidth:3}}/></div>
+<div style={{textAlign:‘center’,padding:‘40px’}}>
+<span className="spinner dark" style={{width:28,height:28,borderWidth:3}}/>
+</div>
 ) : students.length === 0 ? (
 <div style={{textAlign:‘center’,padding:‘60px’,color:‘var(–stone)’}}>
 <div style={{fontSize:40,marginBottom:10}}>👥</div>
@@ -935,14 +968,16 @@ return (
 </div>
 ) : (
 <div className="chat-student-list">
-{students.map(st => (
-<div key={st.id} className=“chat-student-item” onClick={()=>setSelStudent(st)}>
+{students.map(function(st) {
+return (
+<div key={st.id} className=“chat-student-item” onClick={function() { setSelStudent(st); }}>
 <span style={{fontSize:22}}>🧑‍🎓</span>
 <span className="chat-student-name">{st.display_name || st.student_id}</span>
 <span style={{fontSize:12,color:‘var(–stone)’}}>ID: {st.student_id}</span>
 <span style={{fontSize:18,color:‘var(–crimson)’}}>→</span>
 </div>
-))}
+);
+})}
 </div>
 )}
 </div>
@@ -2591,6 +2626,7 @@ onHome={goHome}/>
 }
 
 ReactDOM.createRoot(document.getElementById(‘root’)).render(<App/>);
+
 </script>
 
 </body>
