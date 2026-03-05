@@ -533,25 +533,35 @@ const DB = {
     if (error) throw error;
   },
 
-  /* チャット */
-  async getChatMessages(roomId='general', limit=80) {
+  /* チャット（テーブル分離: teacher_messages / student_messages） */
+  _chatTable(senderType) {
+    /* teacher → teacher_messages、student → student_messages */
+    return senderType === 'teacher' ? 'teacher_messages' : 'student_messages';
+  },
+  async getChatMessages(roomId='general', senderContext='all', limit=80) {
     if (!supabase) return [];
-    const { data, error } = await supabase.from('chat_messages').select('*')
-      .eq('room_id', roomId)
-      .order('created_at', { ascending: false }).limit(limit);
-    if (error) throw error;
-    return (data || []).reverse();
+    /* 両テーブルから取得してマージ・ソート */
+    const fetchFrom = async (table) => {
+      const { data } = await supabase.from(table).select('*')
+        .eq('room_id', roomId)
+        .order('created_at', { ascending: false }).limit(limit);
+      return (data||[]).map(m=>({...m, _table:table}));
+    };
+    try {
+      const [tMsgs, sMsgs] = await Promise.all([fetchFrom('teacher_messages'), fetchFrom('student_messages')]);
+      return [...tMsgs, ...sMsgs].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+    } catch(e){ return []; }
   },
   async sendChatMessage(msg) {
     if (!supabase) throw new Error('Supabase未設定');
-    const displayName = msg.sender_label || msg.sender_id;
-    const { error } = await supabase.from('chat_messages').insert([{
+    const table = msg.sender_type === 'teacher' ? 'teacher_messages' : 'student_messages';
+    const { error } = await supabase.from(table).insert([{
       id:          msg.id,
       room_id:     msg.room_id || 'general',
       sender_id:   msg.sender_id,
       sender_type: msg.sender_type || 'user',
-      sender_name: displayName,
-      sender_label: displayName,
+      sender_name: msg.sender_label || msg.sender_id,
+      sender_label: msg.sender_label || msg.sender_id,
       content:     msg.content || null,
       image_url:   msg.image_data || null,
       image_data:  msg.image_data || null,
@@ -1125,6 +1135,7 @@ function WhiteboardTab({ teacher, toast }) {
   /* refs – event handlers always read latest values */
   const canvasRef    = useRef(null);
   const bgCanvasRef  = useRef(null);
+  const studentOvRef = useRef(null); // 生徒板書受信用overlay
   const channelRef   = useRef(null);
   const sessionIdRef = useRef(null);
   const isLiveRef    = useRef(false);
@@ -1213,19 +1224,28 @@ function WhiteboardTab({ teacher, toast }) {
 
     sessionIdRef.current=id;
 
-    const ch=supabase.channel('wb:'+code,{config:{broadcast:{self:false}}});
+    const ch=supabase.channel('wb:'+code,{config:{broadcast:{self:true}}});
     ch
     .on('broadcast',{event:'student_snapshot'},msg=>{
-      /* 生徒の板書を受信して別レイヤーに表示 */
       const data=msg.payload?.data; if(!data)return;
-      const studentId=msg.payload?.by||'?';
-      // 生徒ごとに専用キャンバスを作るか、単純にoverlayに描画
-      const ov = document.getElementById('student-overlay-canvas');
-      if(!ov)return;
-      ov.width=ov.width; // clear
+      const ov=studentOvRef.current; if(!ov)return;
       const img=new Image();
-      img.onload=()=>{ const ctx=ov.getContext('2d'); ctx.drawImage(img,0,0,ov.width,ov.height); };
+      img.onload=()=>{
+        const ctx=ov.getContext('2d');
+        ctx.clearRect(0,0,ov.width,ov.height);
+        ctx.drawImage(img,0,0,ov.width,ov.height);
+      };
       img.src=data;
+    })
+    .on('broadcast',{event:'student_join'},msg=>{
+      /* 生徒が入室 → 背景画像と現在のキャンバス状態を再送 */
+      setTimeout(()=>{
+        if(selTask?.imageDataUrl){
+          ch.send({type:'broadcast',event:'bg',payload:{url:selTask.imageDataUrl}});
+        }
+        const c=canvasRef.current;
+        if(c){ ch.send({type:'broadcast',event:'snapshot',payload:{data:c.toDataURL('image/png')}}); }
+      }, 300);
     })
     .subscribe(status=>{
       if(status==='SUBSCRIBED'){
@@ -1235,6 +1255,9 @@ function WhiteboardTab({ teacher, toast }) {
         setShowStart(false);
         setUndoStack([]);
         toast.show('配信開始！コード: '+code,'success');
+        if(selTask?.imageDataUrl){
+          ch.send({type:'broadcast',event:'bg',payload:{url:selTask.imageDataUrl}});
+        }
       }
     });
   };
@@ -1403,9 +1426,8 @@ function WhiteboardTab({ teacher, toast }) {
           onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
           onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}/>
         {/* 生徒の板書オーバーレイ（受信表示用） */}
-        <canvas id="student-overlay-canvas"
-          style={{position:'absolute',inset:0,width:'100%',height:'100%',zIndex:2,pointerEvents:'none'}}
-          width={900} height={600}/>
+        <canvas ref={studentOvRef} width={900} height={600}
+          style={{position:'absolute',inset:0,width:'100%',height:'100%',zIndex:2,pointerEvents:'none'}}/>
         {!isLive&&(
           <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(249,244,237,.75)',zIndex:3}}>
             <div style={{textAlign:'center'}}>
@@ -1542,7 +1564,16 @@ function WhiteboardViewer({ session, nickname, canWrite, canVc, onBack }) {
     .on('broadcast',{event:'bg'},msg=>{ if(msg.payload?.url) setBgUrl(msg.payload.url); })
     .on('broadcast',{event:'clear'},()=>{ const ctx=c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height); })
     .on('broadcast',{event:'end'},()=>setEnded(true))
-    .subscribe();
+    /* 生徒が入室したら先生がsnapshotと背景を再送する */
+    .on('broadcast',{event:'student_join'},msg=>{
+      /* 先生チャンネルではないので何もしない（WhiteboardTabが処理） */ 
+    })
+    .subscribe(status=>{
+      if(status==='SUBSCRIBED'){
+        /* 入室通知 → 先生がsnapshotと背景を再送 */
+        ch.send({type:'broadcast',event:'student_join',payload:{by:nickname}});
+      }
+    });
     chRef.current=ch;
     return()=>{ supabase.removeChannel(ch); };
   },[session]);
@@ -1950,17 +1981,23 @@ function ChatPanel({ myId, myLabel, senderType, teachers, toast }) {
   useEffect(()=>{
     setMessages([]);
     let cancelled = false;
-    DB.getChatMessages(roomId).then(msgs=>{ if(!cancelled) setMessages(msgs); }).catch(()=>{});
+    DB.getChatMessages(roomId, senderType).then(msgs=>{ if(!cancelled) setMessages(msgs); }).catch(()=>{});
     return ()=>{ cancelled=true; };
   },[roomId]);
 
   useEffect(()=>{
     if(!supabase)return;
-    if(channelRef.current){ supabase.removeChannel(channelRef.current); }
-    const ch = supabase.channel('chat:'+roomId)
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'chat_messages',filter:`room_id=eq.${roomId}`},
-        payload=>{ setMessages(prev=>[...prev, payload.new]); }
-      ).subscribe();
+    if(channelRef.current){ supabase.removeChannel(channelRef.current); channelRef.current=null; }
+    const addMsg = payload => {
+      setMessages(prev => {
+        if(prev.find(m=>m.id===payload.new.id)) return prev;
+        return [...prev, payload.new].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+      });
+    };
+    const ch = supabase.channel('chat2:'+roomId)
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'teacher_messages',filter:`room_id=eq.${roomId}`}, addMsg)
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'student_messages',filter:`room_id=eq.${roomId}`}, addMsg)
+      .subscribe();
     channelRef.current = ch;
     return ()=>{ supabase.removeChannel(ch); };
   },[roomId]);
