@@ -1087,7 +1087,15 @@ function ScoringTab({ teacher, toast }) {
                       return (
                         <td key={f.id}>
                           <div style={{fontSize:11,color:'var(--stone)',marginBottom:4}}>
-                            <span className="answer-chip">{sub.answers[f.id]||'—'}</span>
+                            {f.type==='draw' ? (
+                              sub.answers[f.id]
+                                ? <img src={sub.answers[f.id]} alt="線画回答"
+                                    style={{maxWidth:120,maxHeight:80,borderRadius:4,border:'1px solid var(--paper-dk)',display:'block',cursor:'pointer'}}
+                                    onClick={()=>window.open(sub.answers[f.id],'_blank')}/>
+                                : <span style={{color:'var(--stone-lt)',fontSize:11}}>未記入</span>
+                            ) : (
+                              <span className="answer-chip">{sub.answers[f.id]||'—'}</span>
+                            )}
                           </div>
                           <div style={{display:'flex',gap:4}}>
                             {['correct','partial','wrong'].map(m=>(
@@ -1978,7 +1986,21 @@ function SubmissionReviewer({ task, onBack }) {
                 <tr key={sub.id}>
                   <td><strong>{sub.nickname}</strong></td>
                   <td className="mono" style={{fontSize:11}}>{sub.submittedAt?.slice(0,19).replace('T',' ')}</td>
-                  {fields.map(f=>(<td key={f.id}>{sub.answers[f.id]?<span className="answer-chip">{sub.answers[f.id]}</span>:<span style={{color:'var(--stone-lt)',fontSize:12}}>未回答</span>}</td>))}
+                  {fields.map(f=>(
+                    <td key={f.id}>
+                      {f.type==='draw' ? (
+                        sub.answers[f.id]
+                          ? <img src={sub.answers[f.id]} alt="線画"
+                              style={{maxWidth:100,maxHeight:70,borderRadius:4,border:'1px solid var(--paper-dk)',display:'block',cursor:'pointer'}}
+                              onClick={()=>window.open(sub.answers[f.id],'_blank')}/>
+                          : <span style={{color:'var(--stone-lt)',fontSize:12}}>未記入</span>
+                      ) : (
+                        sub.answers[f.id]
+                          ? <span className="answer-chip">{sub.answers[f.id]}</span>
+                          : <span style={{color:'var(--stone-lt)',fontSize:12}}>未回答</span>
+                      )}
+                    </td>
+                  ))}
                 </tr>
               ))}
             </tbody>
@@ -2064,20 +2086,10 @@ function StudentRegister({ onDone, toast }) {
 }
 
 /* ── チャットコンポーネント（共用・ルーム切替対応） ── */
-function ChatPanel({ myId, myLabel, senderType, peers, peerType, teachers, toast }) {
-  /* peers が未指定の場合は旧 teachers prop にフォールバック */
-  const peerList = peers || teachers || [];
-  const isTeacher = senderType === 'teacher';
-
+function ChatPanel({ myId, myLabel, senderType, teachers, toast }) {
   const rooms = [
     { id: 'general', label: '🌐 全体チャット' },
-    ...peerList.map(p => {
-      const peerId   = isTeacher ? (p.student_id || p.id) : p.teacher_id;
-      const peerName = isTeacher
-        ? '🧑‍🎓 ' + (p.student_id || p.id)     // 先生が見る → 生徒名
-        : '✉️ ' + p.teacher_id + ' 先生へ';    // 生徒が見る → 先生名
-      return { id: 'teacher_' + peerId, label: peerName };
-    })
+    ...(teachers||[]).map(t=>({ id:'teacher_'+t.teacher_id, label:'👩‍🏫 '+t.teacher_id }))
   ];
 
   const [roomId, setRoomId]         = useState('general');
@@ -2477,12 +2489,12 @@ function VCPanel({ participantId, roomCode, toast }) {
 
 /* ── 教師チャットタブ ── */
 function TeacherChatTab({ teacher, toast }) {
-  const [students, setStudents] = useState([]);
-  useEffect(()=>{ DB.getStudents().then(ss=>setStudents(ss.filter(s=>s.is_approved))).catch(()=>{}); },[]);
+  const [teachers, setTeachers] = useState([]);
+  useEffect(()=>{ DB.getTeachers().then(setTeachers).catch(()=>{}); },[]);
   return (
     <div style={{maxWidth:720}}>
       <div style={{fontFamily:'Noto Serif JP',fontSize:18,fontWeight:700,color:'var(--crimson-dk)',marginBottom:16}}>💬 チャット</div>
-      <ChatPanel myId={teacher.teacherId} myLabel={'👩‍🏫 '+teacher.teacherId} senderType="teacher" peers={students} peerType="student" toast={toast}/>
+      <ChatPanel myId={teacher.teacherId} myLabel={'👩‍🏫 '+teacher.teacherId} senderType="teacher" teachers={teachers} toast={toast}/>
     </div>
   );
 }
@@ -2618,9 +2630,14 @@ function AnswerSheet({ task, nickname, onSubmit }) {
   const onDrawUp=(e,fid)=>{
     if(!drawTools.current[fid]?.drawing)return;
     drawTools.current[fid].drawing=false;
-    /* canvasの内容をbase64でanswersに保存 */
     const c=drawCanvases.current[fid]; if(!c)return;
-    setAnswers(a=>({...a,[fid]:c.toDataURL('image/png')}));
+    /* 白背景に合成してから保存（採点時に線が見えるように） */
+    const tmp=document.createElement('canvas');
+    tmp.width=c.width; tmp.height=c.height;
+    const tctx=tmp.getContext('2d');
+    tctx.fillStyle='#ffffff'; tctx.fillRect(0,0,tmp.width,tmp.height);
+    tctx.drawImage(c,0,0);
+    setAnswers(a=>({...a,[fid]:tmp.toDataURL('image/png')}));
   };
   const clearDraw=(fid)=>{
     const c=drawCanvases.current[fid]; if(!c)return;
@@ -2672,10 +2689,10 @@ function AnswerSheet({ task, nickname, onSubmit }) {
             <img src={task.imageDataUrl} alt="問題プリント" draggable={false}/>
             {fields.map(f=>{
               if(f.type==='draw') return (
-                <div key={f.id} style={{position:'absolute',left:f.x+'%',top:f.y+'%',width:f.width+'%',height:f.height+'%',border:'2px solid var(--crimson)',borderRadius:4,overflow:'hidden',background:'rgba(255,255,255,.85)'}}>
+                <div key={f.id} style={{position:'absolute',left:f.x+'%',top:f.y+'%',width:f.width+'%',height:f.height+'%',border:'2px dashed var(--crimson)',borderRadius:4,overflow:'hidden',background:'transparent'}}>
                   <canvas
                     ref={el=>{if(el&&!el._init){el.width=900;el.height=300;el._init=true;} drawCanvases.current[f.id]=el;}}
-                    style={{width:'100%',height:'100%',cursor:'crosshair',display:'block'}}
+                    style={{width:'100%',height:'100%',cursor:'crosshair',display:'block',background:'transparent'}}
                     onMouseDown={e=>onDrawDown(e,f.id)} onMouseMove={e=>onDrawMove(e,f.id)} onMouseUp={e=>onDrawUp(e,f.id)} onMouseLeave={e=>onDrawUp(e,f.id)}
                     onTouchStart={e=>onDrawDown(e,f.id)} onTouchMove={e=>onDrawMove(e,f.id)} onTouchEnd={e=>onDrawUp(e,f.id)}/>
                 </div>
