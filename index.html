@@ -139,6 +139,10 @@ html,body,#root{height:100%;width:100%;font-family:'Noto Sans JP',sans-serif;bac
 .field-item-name{font-size:13px;font-weight:700;color:var(--ink);}
 .field-item-type{font-size:11px;color:var(--stone);}
 .type-pill{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;}
+.type-text{background:#EEF2FF;color:#3730A3;}
+.type-number{background:#FEF3C7;color:#92400E;}
+.type-draw{background:#F0FDF4;color:#166534;}
+.field-draw{border-style:dashed !important;background:rgba(22,101,52,.06) !important;}
 .type-text{background:#DBEAFE;color:#1E40AF;}.type-number{background:#F3E8FF;color:#6B21A8;}
 .empty-hint{font-size:12px;color:var(--stone-lt);text-align:center;line-height:1.8;padding:8px 0;}
 
@@ -1190,20 +1194,11 @@ function WhiteboardTab({ teacher, toast }) {
     setSelTask(tasks.find(t=>t.id===selTaskId)||null);
   },[selTaskId,tasks]);
 
-  /* 背景画像描画（薄く）– 背景専用キャンバスへ */
+  /* 課題変更時はキャンバスをクリアするだけ（背景はimgタグで表示） */
   useEffect(()=>{
     const c=canvasRef.current; if(!c)return;
     const ctx=c.getContext('2d');
     ctx.clearRect(0,0,c.width,c.height);
-    if(selTask?.imageDataUrl){
-      const img=new Image();
-      img.onload=()=>{
-        ctx.globalAlpha=0.25;
-        ctx.drawImage(img,0,0,c.width,c.height);
-        ctx.globalAlpha=1.0;
-      };
-      img.src=selTask.imageDataUrl;
-    }
   },[selTask]);
 
   /* broadcast helper */
@@ -1278,20 +1273,13 @@ function WhiteboardTab({ teacher, toast }) {
     toast.show('配信を終了しました');
   };
 
-  /* クリア（描画レイヤーのみ） */
+  /* クリア */
   const clearCanvas=()=>{
     const c=canvasRef.current; if(!c)return;
-    setUndoStack(s=>[...s,c.toDataURL('image/png')]);
+    setUndoStack(s=>[...s, c.toDataURL('image/png')]);
     const ctx=c.getContext('2d');
     ctx.clearRect(0,0,c.width,c.height);
-    /* 背景を再描画 */
-    if(selTask?.imageDataUrl){
-      const img=new Image();
-      img.onload=()=>{ ctx.globalAlpha=0.25; ctx.drawImage(img,0,0,c.width,c.height); ctx.globalAlpha=1.0; broadcast('snapshot',{data:c.toDataURL('image/png')}); };
-      img.src=selTask.imageDataUrl;
-    } else {
-      broadcast('clear',{});
-    }
+    broadcast('clear',{});
   };
 
   /* やり直し */
@@ -1699,20 +1687,89 @@ function TaskCreator({ teacher, onDone, toast }) {
   const [selField,setSelField]=useState(null); const [drawing,setDrawing]=useState(null);
   const [mode,setMode]=useState('text'); const [step,setStep]=useState(1);
   const [saving,setSaving]=useState(false);
-  const [showLabelModal,setShowLabelModal]=useState(false); const [pendingField,setPendingField]=useState(null); const [labelInput,setLabelInput]=useState('');
-  /* 解説 */
-  const [expText,setExpText]=useState(''); const [expImg,setExpImg]=useState(null);
+  const [showLabelModal,setShowLabelModal]=useState(false);
+  const [pendingField,setPendingField]=useState(null);
+  const [labelInput,setLabelInput]=useState('');
+  const [expText,setExpText]=useState('');
+  const [expImg,setExpImg]=useState(null);
+  /* ドラッグ移動用 */
+  const [dragState,setDragState]=useState(null); // {fid, ox, oy}
 
   const canvasRef=useRef(null); const fileRef=useRef(null); const expImgRef=useRef(null);
 
-  const getPct=(clientX,clientY)=>{const rect=canvasRef.current.getBoundingClientRect();return{x:Math.max(0,Math.min(100,((clientX-rect.left)/rect.width)*100)),y:Math.max(0,Math.min(100,((clientY-rect.top)/rect.height)*100))};};
-  const getClient=(e)=>e.touches?.length?{clientX:e.touches[0].clientX,clientY:e.touches[0].clientY}:{clientX:e.clientX,clientY:e.clientY};
-  const onPointerDown=(e)=>{if(!imgUrl)return;e.preventDefault();const{clientX,clientY}=getClient(e);const p=getPct(clientX,clientY);setDrawing({x0:p.x,y0:p.y,x1:p.x,y1:p.y});setSelField(null);};
-  const onPointerMove=(e)=>{if(!drawing)return;e.preventDefault();const{clientX,clientY}=getClient(e);const p=getPct(clientX,clientY);setDrawing(d=>({...d,x1:p.x,y1:p.y}));};
-  const onPointerUp=(e)=>{if(!drawing)return;e.preventDefault();const x=Math.min(drawing.x0,drawing.x1),y=Math.min(drawing.y0,drawing.y1),w=Math.abs(drawing.x1-drawing.x0),h=Math.abs(drawing.y1-drawing.y0);setDrawing(null);if(w<1||h<1)return;const nf={id:genId(),type:mode,x,y,width:w,height:h,label:`問${fields.length+1}`};setPendingField(nf);setLabelInput(nf.label);setShowLabelModal(true);};
-  const confirmLabel=()=>{const f={...pendingField,label:labelInput||pendingField.label};setFields(fs=>[...fs,f]);setSelField(f.id);setShowLabelModal(false);setPendingField(null);};
+  const getPct=(clientX,clientY)=>{
+    const rect=canvasRef.current.getBoundingClientRect();
+    return{x:Math.max(0,Math.min(100,((clientX-rect.left)/rect.width)*100)),
+           y:Math.max(0,Math.min(100,((clientY-rect.top)/rect.height)*100))};
+  };
+  const getClient=(e)=>e.touches?.length
+    ?{clientX:e.touches[0].clientX,clientY:e.touches[0].clientY}
+    :{clientX:e.clientX,clientY:e.clientY};
+
+  /* キャンバス全体のpointerdown：解答欄上なら移動モード、それ以外なら新規描画 */
+  const onCanvasDown=(e)=>{
+    if(!imgUrl)return;
+    /* 解答欄overlayが先にstopPropagationするので、ここに来るのは空白部分のみ */
+    e.preventDefault();
+    const{clientX,clientY}=getClient(e);
+    const p=getPct(clientX,clientY);
+    setDrawing({x0:p.x,y0:p.y,x1:p.x,y1:p.y});
+    setSelField(null);
+  };
+  const onCanvasMove=(e)=>{
+    const{clientX,clientY}=getClient(e);
+    /* ドラッグ移動中 */
+    if(dragState){
+      e.preventDefault();
+      const p=getPct(clientX,clientY);
+      setFields(fs=>fs.map(f=>{
+        if(f.id!==dragState.fid)return f;
+        return{...f,
+          x:Math.max(0,Math.min(100-f.width, p.x-dragState.ox)),
+          y:Math.max(0,Math.min(100-f.height,p.y-dragState.oy))};
+      }));
+      return;
+    }
+    /* 新規枠描画中 */
+    if(!drawing)return;
+    e.preventDefault();
+    const p=getPct(clientX,clientY);
+    setDrawing(d=>({...d,x1:p.x,y1:p.y}));
+  };
+  const onCanvasUp=(e)=>{
+    if(dragState){ setDragState(null); return; }
+    if(!drawing)return;
+    e.preventDefault();
+    const x=Math.min(drawing.x0,drawing.x1),y=Math.min(drawing.y0,drawing.y1);
+    const w=Math.abs(drawing.x1-drawing.x0),h=Math.abs(drawing.y1-drawing.y0);
+    setDrawing(null);
+    if(w<1||h<1)return;
+    const nf={id:genId(),type:mode,x,y,width:w,height:h,label:`問${fields.length+1}`};
+    setPendingField(nf); setLabelInput(nf.label); setShowLabelModal(true);
+  };
+  /* 解答欄ラベルクリック → 選択。解答欄内でmousedown → ドラッグ移動開始 */
+  const onFieldDown=(e,fid)=>{
+    e.stopPropagation(); e.preventDefault();
+    const{clientX,clientY}=getClient(e);
+    const p=getPct(clientX,clientY);
+    const f=fields.find(f=>f.id===fid); if(!f)return;
+    setSelField(fid);
+    setDragState({fid, ox:p.x-f.x, oy:p.y-f.y});
+  };
+
+  const confirmLabel=()=>{
+    const f={...pendingField,label:labelInput||pendingField.label};
+    setFields(fs=>[...fs,f]); setSelField(f.id);
+    setShowLabelModal(false); setPendingField(null);
+  };
   const deleteField=(id)=>{setFields(fs=>fs.filter(f=>f.id!==id));if(selField===id)setSelField(null);};
-  const handleFile=(file)=>{if(!file)return;if(!file.type.startsWith('image/')&&file.type!=='application/pdf'){toast.show('画像またはPDFを選択してください','error');return;}const reader=new FileReader();reader.onload=(ev)=>{setImgUrl(ev.target.result);setStep(3);};reader.readAsDataURL(file);};
+  const handleFile=(file)=>{
+    if(!file)return;
+    if(!file.type.startsWith('image/')&&file.type!=='application/pdf'){toast.show('画像またはPDFを選択してください','error');return;}
+    const reader=new FileReader();
+    reader.onload=(ev)=>{setImgUrl(ev.target.result);setStep(3);};
+    reader.readAsDataURL(file);
+  };
   const handleExpImg=(file)=>{if(!file)return;const reader=new FileReader();reader.onload=(ev)=>setExpImg(ev.target.result);reader.readAsDataURL(file);};
 
   const save=async()=>{
@@ -1777,13 +1834,29 @@ function TaskCreator({ teacher, onDone, toast }) {
                 <span style={{fontSize:12,fontWeight:700,color:'var(--stone)'}}>回答欄の種類：</span>
                 <button className={`btn btn-sm ${mode==='text'?'btn-primary':'btn-ghost'}`} onClick={()=>setMode('text')}>📝 テキスト</button>
                 <button className={`btn btn-sm ${mode==='number'?'btn-primary':'btn-ghost'}`} onClick={()=>setMode('number')}>🔢 数値</button>
-                <div style={{flex:1}}/><span style={{fontSize:11,color:'var(--stone)'}}>{imgUrl?'ドラッグして配置':'プリントなし'}</span>
+                <button className={`btn btn-sm ${mode==='draw'?'btn-primary':'btn-ghost'}`} onClick={()=>setMode('draw')}>✏️ 線画</button>
+                <div style={{flex:1}}/><span style={{fontSize:11,color:'var(--stone)'}}>{imgUrl?'ドラッグして配置・枠をつかんで移動':'プリントなし'}</span>
               </div>
-              <div className="canvas-area" ref={canvasRef} onMouseDown={onPointerDown} onMouseMove={onPointerMove} onMouseUp={onPointerUp} onTouchStart={onPointerDown} onTouchMove={onPointerMove} onTouchEnd={onPointerUp}>
+              <div className="canvas-area" ref={canvasRef}
+                onMouseDown={onCanvasDown} onMouseMove={onCanvasMove} onMouseUp={onCanvasUp}
+                onTouchStart={onCanvasDown} onTouchMove={onCanvasMove} onTouchEnd={onCanvasUp}>
                 {imgUrl?(<>
                   <img src={imgUrl} alt="プリント" draggable={false}/>
-                  {fields.map(f=>(<div key={f.id} className={`field-overlay ${selField===f.id?'selected':''}`} style={{left:f.x+'%',top:f.y+'%',width:f.width+'%',height:f.height+'%'}} onClick={e=>{e.stopPropagation();setSelField(f.id);}}><div className="field-label-chip">{f.label}</div><span style={{fontSize:10,opacity:.6,pointerEvents:'none'}}>{f.type==='number'?'🔢':'📝'}</span></div>))}
-                  {drawRect&&<div className="draw-rect" style={drawRect}/>}
+                  {fields.map(f=>(
+                    <div key={f.id}
+                      className={`field-overlay ${selField===f.id?'selected':''} ${f.type==='draw'?'field-draw':''}`}
+                      style={{left:f.x+'%',top:f.y+'%',width:f.width+'%',height:f.height+'%',cursor:'grab'}}
+                      onMouseDown={e=>onFieldDown(e,f.id)}
+                      onTouchStart={e=>onFieldDown(e,f.id)}>
+                      <div className="field-label-chip">{f.label}</div>
+                      <span style={{fontSize:10,opacity:.6,pointerEvents:'none'}}>
+                        {f.type==='draw'?'✏️':f.type==='number'?'🔢':'📝'}
+                      </span>
+                    </div>
+                  ))}
+                  {drawing&&<div className="draw-rect" style={{
+                    left:Math.min(drawing.x0,drawing.x1)+'%',top:Math.min(drawing.y0,drawing.y1)+'%',
+                    width:Math.abs(drawing.x1-drawing.x0)+'%',height:Math.abs(drawing.y1-drawing.y0)+'%'}}/>}
                 </>):(
                   <div className="canvas-placeholder"><div className="big-icon">📋</div><p>プリット画像なしモード<br/>右パネルで回答欄を手動追加できます</p></div>
                 )}
@@ -1793,10 +1866,39 @@ function TaskCreator({ teacher, onDone, toast }) {
               <div className="side-panel-title">回答欄リスト</div>
               {fields.length===0?(<div className="empty-hint">{imgUrl?'プリント上をドラッグして配置':'下のボタンで追加'}</div>):(
                 <div className="field-list">
-                  {fields.map((f,i)=>(<div key={f.id} className={`field-item ${selField===f.id?'selected':''}`} onClick={()=>setSelField(f.id)}><div className="field-item-num">{i+1}</div><div className="field-item-info"><div className="field-item-name">{f.label}</div><div className="field-item-type"><span className={`type-pill ${f.type==='number'?'type-number':'type-text'}`}>{f.type==='number'?'数値':'テキスト'}</span></div></div><button className="btn btn-sm btn-ghost" style={{padding:'4px 8px',color:'var(--crimson)'}} onClick={e=>{e.stopPropagation();deleteField(f.id);}}>✕</button></div>))}
+                  {fields.map((f,i)=>(
+                    <div key={f.id} className={`field-item ${selField===f.id?'selected':''}`} onClick={()=>setSelField(f.id)}>
+                      <div className="field-item-num">{i+1}</div>
+                      <div className="field-item-info">
+                        <div className="field-item-name">{f.label}</div>
+                        <div className="field-item-type">
+                          <span className={`type-pill ${f.type==='number'?'type-number':f.type==='draw'?'type-draw':'type-text'}`}>
+                            {f.type==='draw'?'線画':f.type==='number'?'数値':'テキスト'}
+                          </span>
+                        </div>
+                      </div>
+                      <button className="btn btn-sm btn-ghost" style={{padding:'4px 8px',color:'var(--crimson)'}} onClick={e=>{e.stopPropagation();deleteField(f.id);}}>✕</button>
+                    </div>
+                  ))}
                 </div>
               )}
-              {!imgUrl&&(<><div className="divider"/><div className="form-group" style={{gap:4}}><label className="form-label">手動で追加</label><select className="form-select" value={mode} onChange={e=>setMode(e.target.value)}><option value="text">テキスト</option><option value="number">数値</option></select></div><button className="btn btn-secondary btn-full" onClick={()=>{const f={id:genId(),type:mode,x:5,y:5+fields.length*8,width:40,height:6,label:`問${fields.length+1}`};setFields(fs=>[...fs,f]);setSelField(f.id);}}>＋ 回答欄を追加</button></>)}
+              {!imgUrl&&(
+                <>
+                  <div className="divider"/>
+                  <div className="form-group" style={{gap:4}}>
+                    <label className="form-label">手動で追加</label>
+                    <select className="form-select" value={mode} onChange={e=>setMode(e.target.value)}>
+                      <option value="text">テキスト</option>
+                      <option value="number">数値</option>
+                      <option value="draw">線画</option>
+                    </select>
+                  </div>
+                  <button className="btn btn-secondary btn-full" onClick={()=>{
+                    const f={id:genId(),type:mode,x:5,y:5+fields.length*10,width:40,height:mode==='draw'?20:6,label:`問${fields.length+1}`};
+                    setFields(fs=>[...fs,f]);setSelField(f.id);
+                  }}>＋ 回答欄を追加</button>
+                </>
+              )}
               <div className="divider"/>
               <button className="btn btn-primary btn-full" onClick={()=>setStep(4)}>次へ：解説を設定 →</button>
               <button className="btn btn-ghost btn-full btn-sm" onClick={()=>setStep(2)}>← 戻る</button>
@@ -1977,24 +2079,32 @@ function ChatPanel({ myId, myLabel, senderType, teachers, toast }) {
   const bottomRef  = useRef(null);
   const fileRef    = useRef(null);
   const channelRef = useRef(null);
+  /* 自分が送信したメッセージIDのセット（Realtimeで重複追加防止） */
+  const sentIds    = useRef(new Set());
 
+  /* 初回ロード */
   useEffect(()=>{
     setMessages([]);
+    sentIds.current = new Set();
     let cancelled = false;
-    DB.getChatMessages(roomId, senderType).then(msgs=>{ if(!cancelled) setMessages(msgs); }).catch(()=>{});
+    DB.getChatMessages(roomId).then(msgs=>{ if(!cancelled) setMessages(msgs); }).catch(()=>{});
     return ()=>{ cancelled=true; };
   },[roomId]);
 
+  /* Realtime: 両テーブルを購読 */
   useEffect(()=>{
     if(!supabase)return;
     if(channelRef.current){ supabase.removeChannel(channelRef.current); channelRef.current=null; }
     const addMsg = payload => {
+      const m = payload.new;
+      /* 自分が送ったものはローカルに既にある → スキップ */
+      if(sentIds.current.has(m.id)) return;
       setMessages(prev => {
-        if(prev.find(m=>m.id===payload.new.id)) return prev;
-        return [...prev, payload.new].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
+        if(prev.find(x=>x.id===m.id)) return prev;
+        return [...prev, m].sort((a,b)=>new Date(a.created_at)-new Date(b.created_at));
       });
     };
-    const ch = supabase.channel('chat2:'+roomId)
+    const ch = supabase.channel('chat3:'+roomId)
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'teacher_messages',filter:`room_id=eq.${roomId}`}, addMsg)
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'student_messages',filter:`room_id=eq.${roomId}`}, addMsg)
       .subscribe();
@@ -2014,20 +2124,32 @@ function ChatPanel({ myId, myLabel, senderType, teachers, toast }) {
 
   const send = async () => {
     if(!input.trim()&&!imgPreview)return;
+    const msgId = genId();
+    const now   = new Date().toISOString();
+    /* 送信前にローカルへ即追加（mine=trueで正しく表示） */
+    const localMsg = {
+      id: msgId,
+      room_id: roomId,
+      sender_id: myId,
+      sender_type: senderType||'user',
+      sender_name: myLabel,
+      sender_label: myLabel,
+      content: input.trim()||null,
+      image_data: imgPreview||null,
+      image_url: imgPreview||null,
+      created_at: now,
+    };
+    sentIds.current.add(msgId);
+    setMessages(prev=>[...prev, localMsg]);
+    setInput(''); setImgPreview(null);
     setLoading(true);
     try {
-      await DB.sendChatMessage({
-        id:           genId(),
-        room_id:      roomId,
-        sender_id:    myId,
-        sender_type:  senderType||'user',
-        sender_label: myLabel,
-        content:      input.trim()||null,
-        image_data:   imgPreview||null,
-        created_at:   new Date().toISOString()
-      });
-      setInput(''); setImgPreview(null);
-    } catch(e){toast.show('送信エラー: '+e.message,'error');}
+      await DB.sendChatMessage(localMsg);
+    } catch(e){
+      toast.show('送信エラー: '+e.message,'error');
+      sentIds.current.delete(msgId);
+      setMessages(prev=>prev.filter(m=>m.id!==msgId));
+    }
     finally{setLoading(false);}
   };
 
@@ -2063,9 +2185,12 @@ function ChatPanel({ myId, myLabel, senderType, teachers, toast }) {
           ):messages.map(m=>{
             const mine = m.sender_id === myId;
             const img  = m.image_data || m.image_url;
+            /* 表示名：送信者タイプに応じたプレフィックスを付与 */
             const rawName = m.sender_label || m.sender_name || m.sender_id || '?';
-            const prefix  = m.sender_type==='teacher' ? '👩‍🏫 ' : '🧑‍🎓 ';
-            const displayName = rawName.startsWith('👩') || rawName.startsWith('🧑') ? rawName : prefix+rawName;
+            const isTeacher = m.sender_type === 'teacher';
+            const displayName = isTeacher
+              ? (rawName.startsWith('👩') ? rawName : '👩‍🏫 '+rawName)
+              : (rawName.startsWith('🧑') ? rawName : '🧑‍🎓 '+rawName);
             return (
               <div key={m.id} className={`chat-msg ${mine?'mine':'theirs'}`}>
                 {!mine&&<div className="chat-meta">{displayName}</div>}
@@ -2436,15 +2561,72 @@ function StudentCodeEntry({ onEnter, onWatchLive, toast }) {
 
 /* ── 生徒：回答シート ── */
 function AnswerSheet({ task, nickname, onSubmit }) {
-  const [answers,setAnswers]=useState({}); const [submitted,setSubmitted]=useState(false); const [loading,setLoading]=useState(false);
-  const fields=task.answerFields||[];
-  const filled=fields.filter(f=>(answers[f.id]||'').trim()!=='').length;
-  const total=fields.length; const pct=total===0?0:Math.round((filled/total)*100);
+  const [answers,setAnswers]   = useState({});
+  const [submitted,setSubmitted] = useState(false);
+  const [loading,setLoading]   = useState(false);
+  const fields = task.answerFields||[];
+  /* draw型は別途canvasで管理 */
+  const drawCanvases = useRef({});
+  const drawTools    = useRef({}); // {fid: {drawing,last}}
+
+  const nonDrawFilled = fields.filter(f=>f.type!=='draw'&&(answers[f.id]||'').trim()!=='').length;
+  const nonDrawTotal  = fields.filter(f=>f.type!=='draw').length;
+  const total  = fields.length;
+  const filled = nonDrawFilled + fields.filter(f=>f.type==='draw').length; // draw欄は常にカウント
+  const pct = total===0?0:Math.round((filled/total)*100);
+
+  /* draw canvas 初期化 */
+  useEffect(()=>{
+    fields.filter(f=>f.type==='draw').forEach(f=>{
+      const c=drawCanvases.current[f.id];
+      if(c&&!c._init){ c.width=900; c.height=300; c._init=true; }
+    });
+  },[]);
+
+  const getDrawPos=(e,c)=>{
+    const r=c.getBoundingClientRect();
+    const t=e.touches?.[0]||e;
+    return{x:(t.clientX-r.left)*(c.width/r.width),y:(t.clientY-r.top)*(c.height/r.height)};
+  };
+  const onDrawDown=(e,fid)=>{
+    const c=drawCanvases.current[fid]; if(!c)return;
+    e.preventDefault();
+    const pos=getDrawPos(e,c);
+    const ctx=c.getContext('2d');
+    ctx.beginPath(); ctx.moveTo(pos.x,pos.y);
+    drawTools.current[fid]={drawing:true};
+  };
+  const onDrawMove=(e,fid)=>{
+    if(!drawTools.current[fid]?.drawing)return;
+    const c=drawCanvases.current[fid]; if(!c)return;
+    e.preventDefault();
+    const pos=getDrawPos(e,c);
+    const ctx=c.getContext('2d');
+    ctx.strokeStyle='#1A1410'; ctx.lineWidth=2; ctx.lineCap='round';
+    ctx.lineTo(pos.x,pos.y); ctx.stroke();
+  };
+  const onDrawUp=(e,fid)=>{
+    if(!drawTools.current[fid]?.drawing)return;
+    drawTools.current[fid].drawing=false;
+    /* canvasの内容をbase64でanswersに保存 */
+    const c=drawCanvases.current[fid]; if(!c)return;
+    setAnswers(a=>({...a,[fid]:c.toDataURL('image/png')}));
+  };
+  const clearDraw=(fid)=>{
+    const c=drawCanvases.current[fid]; if(!c)return;
+    c.getContext('2d').clearRect(0,0,c.width,c.height);
+    setAnswers(a=>({...a,[fid]:''}));
+  };
 
   const handleSubmit=async()=>{
-    if(filled<total){if(!window.confirm(`まだ ${total-filled} 問が未入力です。このまま提出しますか？`))return;}
+    if(nonDrawFilled<nonDrawTotal){
+      if(!window.confirm(`まだ ${nonDrawTotal-nonDrawFilled} 問が未入力です。このまま提出しますか？`))return;
+    }
     setLoading(true);
-    try{await DB.createSubmission({id:genId(),taskId:task.id,nickname,answers:{...answers},submittedAt:new Date().toISOString()});setSubmitted(true);onSubmit();}
+    try{
+      await DB.createSubmission({id:genId(),taskId:task.id,nickname,answers:{...answers},submittedAt:new Date().toISOString()});
+      setSubmitted(true); onSubmit();
+    }
     catch(e){alert('提出に失敗しました: '+e.message);}
     finally{setLoading(false);}
   };
@@ -2456,7 +2638,6 @@ function AnswerSheet({ task, nickname, onSubmit }) {
         <div className="done-title">提出完了！</div>
         <div className="done-sub">{nickname} さんの回答を受け付けました。<br/>お疲れ様でした！</div>
       </div>
-      {/* 解説表示 */}
       {(task.explanationText||task.explanationImageUrl)&&(
         <div className="explanation-box">
           <div className="explanation-title">💡 解説</div>
@@ -2479,17 +2660,48 @@ function AnswerSheet({ task, nickname, onSubmit }) {
         {task.imageDataUrl?(
           <div className="sheet-canvas">
             <img src={task.imageDataUrl} alt="問題プリント" draggable={false}/>
-            {fields.map(f=>(<div key={f.id} style={{position:'absolute',left:f.x+'%',top:f.y+'%',width:f.width+'%',height:f.height+'%'}}><input className="answer-input" type={f.type==='number'?'number':'text'} placeholder={f.label} value={answers[f.id]||''} onChange={e=>setAnswers(a=>({...a,[f.id]:e.target.value}))} disabled={submitted}/></div>))}
+            {fields.map(f=>{
+              if(f.type==='draw') return (
+                <div key={f.id} style={{position:'absolute',left:f.x+'%',top:f.y+'%',width:f.width+'%',height:f.height+'%',border:'2px solid var(--crimson)',borderRadius:4,overflow:'hidden',background:'rgba(255,255,255,.85)'}}>
+                  <canvas
+                    ref={el=>{if(el&&!el._init){el.width=900;el.height=300;el._init=true;} drawCanvases.current[f.id]=el;}}
+                    style={{width:'100%',height:'100%',cursor:'crosshair',display:'block'}}
+                    onMouseDown={e=>onDrawDown(e,f.id)} onMouseMove={e=>onDrawMove(e,f.id)} onMouseUp={e=>onDrawUp(e,f.id)} onMouseLeave={e=>onDrawUp(e,f.id)}
+                    onTouchStart={e=>onDrawDown(e,f.id)} onTouchMove={e=>onDrawMove(e,f.id)} onTouchEnd={e=>onDrawUp(e,f.id)}/>
+                </div>
+              );
+              return (
+                <div key={f.id} style={{position:'absolute',left:f.x+'%',top:f.y+'%',width:f.width+'%',height:f.height+'%'}}>
+                  <input className="answer-input" type={f.type==='number'?'number':'text'}
+                    placeholder={f.label} value={answers[f.id]||''}
+                    onChange={e=>setAnswers(a=>({...a,[f.id]:e.target.value}))} disabled={submitted}/>
+                </div>
+              );
+            })}
           </div>
         ):(<div className="canvas-placeholder"><div className="big-icon">📄</div><p>プリント画像が添付されていません</p></div>)}
       </div>
       {fields.length>0&&(
         <div className="side-panel">
-          <div className="side-panel-title">回答一覧（入力補助）</div>
+          <div className="side-panel-title">回答一覧</div>
           {fields.map((f,i)=>(
             <div key={f.id} className="form-group" style={{marginBottom:10}}>
-              <label className="form-label">{i+1}. {f.label}<span className={`type-pill ${f.type==='number'?'type-number':'type-text'}`} style={{marginLeft:6}}>{f.type==='number'?'数値':'テキスト'}</span></label>
-              <input className="form-input" type={f.type==='number'?'number':'text'} placeholder="回答を入力…" value={answers[f.id]||''} onChange={e=>setAnswers(a=>({...a,[f.id]:e.target.value}))} disabled={submitted}/>
+              <label className="form-label">
+                {i+1}. {f.label}
+                <span className={`type-pill ${f.type==='draw'?'type-draw':f.type==='number'?'type-number':'type-text'}`} style={{marginLeft:6}}>
+                  {f.type==='draw'?'✏️ 線画':f.type==='number'?'数値':'テキスト'}
+                </span>
+              </label>
+              {f.type==='draw'?(
+                <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                  <span style={{fontSize:12,color:'var(--stone)'}}>プリント上の枠に直接描いてください</span>
+                  <button className="btn btn-ghost btn-sm" style={{fontSize:11}} onClick={()=>clearDraw(f.id)}>🗑 クリア</button>
+                </div>
+              ):(
+                <input className="form-input" type={f.type==='number'?'number':'text'}
+                  placeholder="回答を入力…" value={answers[f.id]||''}
+                  onChange={e=>setAnswers(a=>({...a,[f.id]:e.target.value}))} disabled={submitted}/>
+              )}
             </div>
           ))}
         </div>
