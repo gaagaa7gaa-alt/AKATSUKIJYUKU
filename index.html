@@ -2358,12 +2358,12 @@ function ChatPanel({ myId, myLabel, senderType, teachers, toast }) {
     { id: 'general', label: '🌐 全体チャット' },
     ...(teachers||[]).map(p => {
       if(isTeacher){
-        /* 先生が見るDM一覧 → 生徒名を表示 */
+        /* 先生が見るDM → room_id = dm_{生徒ID} */
         const sid = p.student_id || p.id;
-        return { id:'teacher_'+sid, label:'🧑‍🎓 '+(p.student_id||p.id) };
+        return { id:'dm_'+sid, label:'🧑‍🎓 '+(p.student_id||p.id) };
       } else {
-        /* 生徒が見るDM一覧 → 先生名を表示 */
-        return { id:'teacher_'+p.teacher_id, label:'✉️ '+p.teacher_id+' 先生へ' };
+        /* 生徒が見るDM → room_id = dm_{自分のID}（= myId） */
+        return { id:'dm_'+myId, label:'✉️ '+p.teacher_id+' 先生へ' };
       }
     })
   ];
