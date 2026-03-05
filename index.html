@@ -524,15 +524,28 @@ const DB = {
   },
 
   /* チャット */
-  async getChatMessages(limit=50) {
+  async getChatMessages(roomId='general', limit=80) {
     if (!supabase) return [];
-    const { data, error } = await supabase.from('chat_messages').select('*').order('created_at', { ascending: false }).limit(limit);
+    const { data, error } = await supabase.from('chat_messages').select('*')
+      .eq('room_id', roomId)
+      .order('created_at', { ascending: false }).limit(limit);
     if (error) throw error;
     return (data || []).reverse();
   },
   async sendChatMessage(msg) {
     if (!supabase) throw new Error('Supabase未設定');
-    const { error } = await supabase.from('chat_messages').insert([msg]);
+    const { error } = await supabase.from('chat_messages').insert([{
+      id:          msg.id,
+      room_id:     msg.room_id || 'general',
+      sender_id:   msg.sender_id,
+      sender_type: msg.sender_type || 'user',
+      sender_name: msg.sender_label || msg.sender_id,
+      sender_label: msg.sender_label,
+      content:     msg.content || null,
+      image_url:   msg.image_data || null,
+      image_data:  msg.image_data || null,
+      created_at:  msg.created_at,
+    }]);
     if (error) throw error;
   },
 };
@@ -1767,33 +1780,40 @@ function StudentRegister({ onDone, toast }) {
   );
 }
 
-/* ── チャットコンポーネント（共用） ── */
-function ChatPanel({ myId, myLabel, toast }) {
-  const [messages,setMessages] = useState([]);
-  const [input,setInput]       = useState('');
-  const [loading,setLoading]   = useState(false);
-  const [imgPreview,setImgPreview] = useState(null);
-  const [zoomImg,setZoomImg]   = useState(null);
-  const bottomRef = useRef(null);
-  const fileRef   = useRef(null);
+/* ── チャットコンポーネント（共用・ルーム切替対応） ── */
+function ChatPanel({ myId, myLabel, senderType, teachers, toast }) {
+  const rooms = [
+    { id: 'general', label: '🌐 全体チャット' },
+    ...(teachers||[]).map(t=>({ id:'teacher_'+t.teacher_id, label:'👩‍🏫 '+t.teacher_id }))
+  ];
+
+  const [roomId, setRoomId]         = useState('general');
+  const [messages, setMessages]     = useState([]);
+  const [input, setInput]           = useState('');
+  const [loading, setLoading]       = useState(false);
+  const [imgPreview, setImgPreview] = useState(null);
+  const [zoomImg, setZoomImg]       = useState(null);
+  const bottomRef  = useRef(null);
+  const fileRef    = useRef(null);
   const channelRef = useRef(null);
 
-  const loadMessages = useCallback(async () => {
-    try { const msgs = await DB.getChatMessages(); setMessages(msgs); } catch(e){}
-  }, []);
+  useEffect(()=>{
+    setMessages([]);
+    let cancelled = false;
+    DB.getChatMessages(roomId).then(msgs=>{ if(!cancelled) setMessages(msgs); }).catch(()=>{});
+    return ()=>{ cancelled=true; };
+  },[roomId]);
 
-  useEffect(()=>{ loadMessages(); },[loadMessages]);
-
-  /* Realtime subscribe */
   useEffect(()=>{
     if(!supabase)return;
-    const ch = supabase.channel('chat-global')
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'chat_messages'},payload=>{
-        setMessages(prev=>[...prev, payload.new]);
-      }).subscribe();
+    if(channelRef.current){ supabase.removeChannel(channelRef.current); }
+    const ch = supabase.channel('chat:'+roomId)
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'chat_messages',filter:`room_id=eq.${roomId}`},
+        payload=>{ setMessages(prev=>[...prev, payload.new]); }
+      ).subscribe();
     channelRef.current = ch;
     return ()=>{ supabase.removeChannel(ch); };
-  },[]);
+  },[roomId]);
 
   useEffect(()=>{ bottomRef.current?.scrollIntoView({behavior:'smooth'}); },[messages]);
 
@@ -1810,42 +1830,58 @@ function ChatPanel({ myId, myLabel, toast }) {
     setLoading(true);
     try {
       await DB.sendChatMessage({
-        id: genId(),
-        sender_id: myId,
+        id:           genId(),
+        room_id:      roomId,
+        sender_id:    myId,
+        sender_type:  senderType||'user',
         sender_label: myLabel,
-        content: input.trim()||null,
-        image_data: imgPreview||null,
-        created_at: new Date().toISOString()
+        content:      input.trim()||null,
+        image_data:   imgPreview||null,
+        created_at:   new Date().toISOString()
       });
       setInput(''); setImgPreview(null);
     } catch(e){toast.show('送信エラー: '+e.message,'error');}
     finally{setLoading(false);}
   };
 
-  const fmt = (ts) => {
-    if(!ts)return'';
-    return ts.slice(11,16);
-  };
+  const fmt = (ts) => ts ? ts.slice(11,16) : '';
 
   return (
-    <div style={{display:'flex',flexDirection:'column',gap:0}}>
+    <div style={{display:'flex',flexDirection:'column',gap:12}}>
       {zoomImg&&(
         <div className="img-modal-overlay" onClick={()=>setZoomImg(null)}>
           <img src={zoomImg} alt="拡大"/>
         </div>
       )}
+
+      {/* ルーム選択タブ */}
+      <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+        {rooms.map(r=>(
+          <button key={r.id}
+            className={`filter-tab ${roomId===r.id?'active':''}`}
+            onClick={()=>setRoomId(r.id)}>
+            {r.label}
+          </button>
+        ))}
+      </div>
+
+      {/* チャット本体 */}
       <div className="chat-wrap">
+        <div style={{padding:'8px 14px',background:'var(--paper-dk)',borderBottom:'2px solid var(--stone-lt)',fontSize:12,fontWeight:700,color:'var(--stone)'}}>
+          {rooms.find(r=>r.id===roomId)?.label||roomId}
+        </div>
         <div className="chat-messages">
           {messages.length===0?(
             <div className="chat-empty"><div style={{fontSize:32}}>💬</div><div style={{fontSize:13}}>まだメッセージがありません</div></div>
           ):messages.map(m=>{
             const mine = m.sender_id === myId;
+            const img  = m.image_data || m.image_url;
             return (
               <div key={m.id} className={`chat-msg ${mine?'mine':'theirs'}`}>
-                {!mine&&<div className="chat-meta">{m.sender_label}</div>}
+                {!mine&&<div className="chat-meta">{m.sender_label||m.sender_name||m.sender_id}</div>}
                 <div className="chat-bubble">
                   {m.content&&<div>{m.content}</div>}
-                  {m.image_data&&<img src={m.image_data} alt="画像" onClick={()=>setZoomImg(m.image_data)}/>}
+                  {img&&<img src={img} alt="画像" onClick={()=>setZoomImg(img)}/>}
                 </div>
                 <div className="chat-meta">{fmt(m.created_at)}</div>
               </div>
@@ -1876,6 +1912,7 @@ function ChatPanel({ myId, myLabel, toast }) {
 function StudentDashboard({ student, toast, onLogout }) {
   const [activeTab, setActiveTab]   = useState('tasks');
   const [perms, setPerms]           = useState({ vc_enabled: false, wb_enabled: false });
+  const [teachers, setTeachers]     = useState([]);
   const [code,setCode]              = useState('');
   const [err,setErr]                = useState('');
   const [loading,setLoading]        = useState(false);
@@ -1884,7 +1921,7 @@ function StudentDashboard({ student, toast, onLogout }) {
 
   useEffect(()=>{
     loadPerms();
-    /* ポーリングで権限変更を検知 */
+    DB.getTeachers().then(setTeachers).catch(()=>{});
     const iv = setInterval(loadPerms, 15000);
     return ()=>clearInterval(iv);
   },[]);
@@ -1964,7 +2001,7 @@ function StudentDashboard({ student, toast, onLogout }) {
 
       {activeTab==='chat'&&(
         <div style={{marginTop:4}}>
-          <ChatPanel myId={student.studentId} myLabel={student.studentId} toast={toast}/>
+          <ChatPanel myId={student.studentId} myLabel={student.studentId} senderType="student" teachers={teachers} toast={toast}/>
         </div>
       )}
 
@@ -2083,10 +2120,12 @@ function VCPanel({ studentId, toast }) {
 
 /* ── 教師チャットタブ ── */
 function TeacherChatTab({ teacher, toast }) {
+  const [teachers, setTeachers] = useState([]);
+  useEffect(()=>{ DB.getTeachers().then(setTeachers).catch(()=>{}); },[]);
   return (
-    <div style={{maxWidth:700}}>
-      <div style={{fontFamily:'Noto Serif JP',fontSize:18,fontWeight:700,color:'var(--crimson-dk)',marginBottom:16}}>💬 生徒とのチャット</div>
-      <ChatPanel myId={teacher.teacherId} myLabel={'👩‍🏫 '+teacher.teacherId} toast={toast}/>
+    <div style={{maxWidth:720}}>
+      <div style={{fontFamily:'Noto Serif JP',fontSize:18,fontWeight:700,color:'var(--crimson-dk)',marginBottom:16}}>💬 チャット</div>
+      <ChatPanel myId={teacher.teacherId} myLabel={'👩‍🏫 '+teacher.teacherId} senderType="teacher" teachers={teachers} toast={toast}/>
     </div>
   );
 }
