@@ -1214,7 +1214,20 @@ function WhiteboardTab({ teacher, toast }) {
     sessionIdRef.current=id;
 
     const ch=supabase.channel('wb:'+code,{config:{broadcast:{self:false}}});
-    ch.subscribe(status=>{
+    ch
+    .on('broadcast',{event:'student_snapshot'},msg=>{
+      /* 生徒の板書を受信して別レイヤーに表示 */
+      const data=msg.payload?.data; if(!data)return;
+      const studentId=msg.payload?.by||'?';
+      // 生徒ごとに専用キャンバスを作るか、単純にoverlayに描画
+      const ov = document.getElementById('student-overlay-canvas');
+      if(!ov)return;
+      ov.width=ov.width; // clear
+      const img=new Image();
+      img.onload=()=>{ const ctx=ov.getContext('2d'); ctx.drawImage(img,0,0,ov.width,ov.height); };
+      img.src=data;
+    })
+    .subscribe(status=>{
       if(status==='SUBSCRIBED'){
         channelRef.current=ch;
         setSessionCode(code);
@@ -1378,17 +1391,23 @@ function WhiteboardTab({ teacher, toast }) {
         ))}
       </div>
 
-      <div style={{position:'relative',borderRadius:14,overflow:'hidden',boxShadow:'0 2px 12px var(--shadow)'}}>
+      <div style={{position:'relative',borderRadius:14,overflow:'hidden',boxShadow:'0 2px 12px var(--shadow)',background:'white'}}>
         {/* 背景レイヤー（プリント薄表示）— アスペクト比を保持 */}
         {selTask?.imageDataUrl&&(
-          <img src={selTask.imageDataUrl} alt="bg" style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'contain',opacity:0.25,pointerEvents:'none',background:'white'}}/>
+          <img src={selTask.imageDataUrl} alt="bg"
+            style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'contain',opacity:0.25,pointerEvents:'none'}}/>
         )}
+        {/* 先生の描画キャンバス */}
         <canvas ref={canvasRef} className="wb-canvas"
-          style={{width:'100%',cursor:isLive?(tool==='eraser'?'cell':'crosshair'):'not-allowed',opacity:isLive?1:.6,position:'relative',zIndex:1,background:'transparent'}}
+          style={{width:'100%',display:'block',cursor:isLive?(tool==='eraser'?'cell':'crosshair'):'not-allowed',opacity:isLive?1:.6,position:'relative',zIndex:1,background:'transparent'}}
           onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
           onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}/>
+        {/* 生徒の板書オーバーレイ（受信表示用） */}
+        <canvas id="student-overlay-canvas"
+          style={{position:'absolute',inset:0,width:'100%',height:'100%',zIndex:2,pointerEvents:'none'}}
+          width={900} height={600}/>
         {!isLive&&(
-          <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(249,244,237,.75)',zIndex:2}}>
+          <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(249,244,237,.75)',zIndex:3}}>
             <div style={{textAlign:'center'}}>
               <div style={{fontSize:48,marginBottom:12}}>🖊</div>
               <div style={{fontFamily:'Noto Serif JP',fontSize:16,fontWeight:700,color:'var(--stone)'}}>「配信開始」を押すと描けるようになります</div>
@@ -1481,20 +1500,21 @@ function WhiteboardTab({ teacher, toast }) {
 }
 
 /* ── 生徒：ホワイトボード視聴＋板書参加（Broadcast版） ── */
-function WhiteboardViewer({ session, nickname, studentId, canWrite, canVc, onBack }) {
-  const canvasRef  = useRef(null);
-  const overlayRef = useRef(null); // 生徒描画用レイヤー
+function WhiteboardViewer({ session, nickname, canWrite, canVc, onBack }) {
+  const canvasRef  = useRef(null);  // 先生の板書受信
+  const overlayRef = useRef(null);  // 生徒描画オーバーレイ
   const chRef      = useRef(null);
-  const [ended,setEnded]     = useState(false);
-  const [tool,setTool]       = useState('pen');
-  const [color,setColor]     = useState('#9B1B30');
+  const [ended,setEnded]         = useState(false);
+  const [tool,setTool]           = useState('pen');
+  const [color,setColor]         = useState('#9B1B30');
   const [lineWidth,setLineWidth] = useState(3);
-  const drawing    = useRef(false);
-  const startPos   = useRef({x:0,y:0});
-  const snapRef    = useRef(null);
-  const toolRef    = useRef('pen');
-  const colorRef   = useRef('#9B1B30');
-  const lwRef      = useRef(3);
+  const [undoStack,setUndoStack] = useState([]);
+  const [bgUrl,setBgUrl]         = useState(null); // 背景画像URL（先生から受信）
+  const drawing  = useRef(false);
+  const snapRef  = useRef(null);
+  const toolRef  = useRef('pen');
+  const colorRef = useRef('#9B1B30');
+  const lwRef    = useRef(3);
   useEffect(()=>{ toolRef.current=tool; },[tool]);
   useEffect(()=>{ colorRef.current=color; },[color]);
   useEffect(()=>{ lwRef.current=lineWidth; },[lineWidth]);
@@ -1513,13 +1533,13 @@ function WhiteboardViewer({ session, nickname, studentId, canWrite, canVc, onBac
       img.src=data;
     })
     .on('broadcast',{event:'student_snapshot'},msg=>{
-      // 他の生徒の描画を受信（自分以外）
       if(msg.payload?.by===nickname)return;
       const data=msg.payload?.data; if(!data||!ov)return;
       const img=new Image();
       img.onload=()=>{ const ctx=ov.getContext('2d'); ctx.clearRect(0,0,ov.width,ov.height); ctx.drawImage(img,0,0,ov.width,ov.height); };
       img.src=data;
     })
+    .on('broadcast',{event:'bg'},msg=>{ if(msg.payload?.url) setBgUrl(msg.payload.url); })
     .on('broadcast',{event:'clear'},()=>{ const ctx=c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height); })
     .on('broadcast',{event:'end'},()=>setEnded(true))
     .subscribe();
@@ -1527,7 +1547,6 @@ function WhiteboardViewer({ session, nickname, studentId, canWrite, canVc, onBac
     return()=>{ supabase.removeChannel(ch); };
   },[session]);
 
-  /* 生徒の描画イベント */
   const getPos=(e,c)=>{
     const r=c.getBoundingClientRect();
     const t=e.touches?.[0]||e;
@@ -1539,9 +1558,8 @@ function WhiteboardViewer({ session, nickname, studentId, canWrite, canVc, onBac
     const ov=overlayRef.current; if(!ov)return;
     drawing.current=true;
     const pos=getPos(e,ov);
-    startPos.current=pos;
     const ctx=ov.getContext('2d');
-    snapRef.current=ctx.getImageData(0,0,ov.width,ov.height);
+    setUndoStack(s=>[...s, ctx.getImageData(0,0,ov.width,ov.height)]);
     ctx.beginPath(); ctx.moveTo(pos.x,pos.y);
   };
   const onMove=(e)=>{
@@ -1556,17 +1574,25 @@ function WhiteboardViewer({ session, nickname, studentId, canWrite, canVc, onBac
       ctx.lineTo(pos.x,pos.y); ctx.stroke();
       ctx.globalCompositeOperation='source-over';
     } else {
-      ctx.strokeStyle=colorRef.current; ctx.lineWidth=lwRef.current;
+      ctx.strokeStyle=colorRef.current; ctx.lineWidth=lwRef.current; ctx.lineCap='round';
       ctx.lineTo(pos.x,pos.y); ctx.stroke();
     }
   };
-  const onUp=(e)=>{
+  const onUp=()=>{
     if(!drawing.current||!canWrite)return;
     drawing.current=false;
     const ov=overlayRef.current; if(!ov)return;
+    ov.getContext('2d').globalCompositeOperation='source-over';
+    chRef.current?.send({type:'broadcast',event:'student_snapshot',payload:{data:ov.toDataURL('image/png'),by:nickname}});
+  };
+  const undoStudent=()=>{
+    if(!undoStack.length)return;
+    const ov=overlayRef.current; if(!ov)return;
     const ctx=ov.getContext('2d');
-    ctx.globalCompositeOperation='source-over';
-    // 自分の描画をBroadcastで送信
+    const prev=undoStack[undoStack.length-1];
+    setUndoStack(s=>s.slice(0,-1));
+    ctx.clearRect(0,0,ov.width,ov.height);
+    if(prev) ctx.putImageData(prev,0,0);
     chRef.current?.send({type:'broadcast',event:'student_snapshot',payload:{data:ov.toDataURL('image/png'),by:nickname}});
   };
 
@@ -1589,19 +1615,19 @@ function WhiteboardViewer({ session, nickname, studentId, canWrite, canVc, onBac
         <div className="live-badge"><span className="live-dot"/>LIVE 視聴中</div>
         <div style={{fontFamily:'Noto Serif JP',fontSize:15,fontWeight:700,color:'var(--crimson-dk)'}}>先生のホワイトボード</div>
         <div style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:8}}>
-          {/* VC（許可されている場合のみ） */}
           {canVc&&<VCPanel participantId={nickname} roomCode={session.access_code} toast={{show:()=>{}}}/>}
           <span style={{fontSize:13,color:'var(--stone)'}}>👤 {nickname}</span>
         </div>
       </div>
 
-      {/* 板書ツールバー（許可時のみ） */}
+      {/* 板書ツールバー */}
       {canWrite&&(
         <div className="wb-toolbar">
           <span style={{fontSize:12,fontWeight:700,color:'var(--stone)'}}>ツール：</span>
           {[['pen','✏️'],['eraser','🧹']].map(([t,icon])=>(
             <button key={t} className={`wb-tool-btn ${tool===t?'active':''}`} onClick={()=>setTool(t)}>{icon}</button>
           ))}
+          <button className="wb-tool-btn" title="やり直し" disabled={!undoStack.length} onClick={undoStudent}>↩</button>
           <div style={{width:1,height:24,background:'var(--stone-lt)',margin:'0 4px'}}/>
           {colors.map(c=>(
             <div key={c} className={`wb-color-btn ${color===c?'active':''}`} style={{background:c}} onClick={()=>setColor(c)}/>
@@ -1613,11 +1639,12 @@ function WhiteboardViewer({ session, nickname, studentId, canWrite, canVc, onBac
         </div>
       )}
 
-      {/* キャンバス（教師レイヤー＋生徒描画レイヤー） */}
+      {/* キャンバス */}
       <div style={{position:'relative',borderRadius:14,overflow:'hidden',boxShadow:'0 2px 12px var(--shadow)',background:'white'}}>
-        {/* 教師の板書を受信するレイヤー */}
-        <canvas ref={canvasRef} style={{width:'100%',display:'block',background:'white',position:'relative',zIndex:1}}/>
-        {/* 生徒描画オーバーレイ */}
+        {bgUrl&&(
+          <img src={bgUrl} alt="bg" style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'contain',opacity:0.25,pointerEvents:'none'}}/>
+        )}
+        <canvas ref={canvasRef} style={{width:'100%',display:'block',background:'transparent',position:'relative',zIndex:1}}/>
         {canWrite&&(
           <canvas ref={overlayRef}
             style={{position:'absolute',inset:0,width:'100%',height:'100%',zIndex:2,cursor:tool==='eraser'?'cell':'crosshair'}}
@@ -1999,7 +2026,9 @@ function ChatPanel({ myId, myLabel, senderType, teachers, toast }) {
           ):messages.map(m=>{
             const mine = m.sender_id === myId;
             const img  = m.image_data || m.image_url;
-            const displayName = m.sender_label || m.sender_name || m.sender_id;
+            const rawName = m.sender_label || m.sender_name || m.sender_id || '?';
+            const prefix  = m.sender_type==='teacher' ? '👩‍🏫 ' : '🧑‍🎓 ';
+            const displayName = rawName.startsWith('👩') || rawName.startsWith('🧑') ? rawName : prefix+rawName;
             return (
               <div key={m.id} className={`chat-msg ${mine?'mine':'theirs'}`}>
                 {!mine&&<div className="chat-meta">{displayName}</div>}
@@ -2156,75 +2185,111 @@ function StudentDashboard({ student, toast, onLogout }) {
 
 /* ── VC パネル（WebRTC / Supabase Broadcast シグナリング） ── */
 function VCPanel({ participantId, roomCode, toast }) {
-  const [status,setStatus]   = useState('idle');
-  const [peers,setPeers]     = useState([]);
-  const localStream  = useRef(null);
-  const pcsRef       = useRef({});
-  const channelRef   = useRef(null);
-  const myId         = useRef(participantId+'_'+genId());
-  const vcRoom       = 'vc:'+(roomCode||'global');
+  const [status,setStatus] = useState('idle');
+  const [peers,setPeers]   = useState([]);
+  const localStream = useRef(null);
+  const pcsRef      = useRef({});
+  const channelRef  = useRef(null);
+  const audioElems  = useRef({});
+  const myId        = useRef(participantId+'_'+genId().slice(0,6));
+  const vcRoom      = 'vc:'+(roomCode||'global');
 
   const createPC = (peerId, ch) => {
-    const pc = new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
-    pcsRef.current[peerId]=pc;
-    localStream.current.getTracks().forEach(t=>pc.addTrack(t,localStream.current));
-    pc.onicecandidate = e=>{ if(e.candidate) ch.send({type:'broadcast',event:'ice',payload:{from:myId.current,to:peerId,candidate:e.candidate}}); };
-    pc.ontrack = e=>{ setPeers(p=>p.includes(peerId)?p:[...p,peerId]); const audio=document.createElement('audio'); audio.srcObject=e.streams[0]; audio.autoplay=true; document.body.appendChild(audio); };
+    const pc = new RTCPeerConnection({
+      iceServers:[
+        {urls:'stun:stun.l.google.com:19302'},
+        {urls:'stun:stun1.l.google.com:19302'}
+      ]
+    });
+    pcsRef.current[peerId] = pc;
+    /* 自分のトラックを追加 */
+    if(localStream.current){
+      localStream.current.getTracks().forEach(t => pc.addTrack(t, localStream.current));
+    }
+    pc.onicecandidate = e => {
+      if(e.candidate) ch.send({type:'broadcast',event:'ice',payload:{from:myId.current,to:peerId,candidate:e.candidate.toJSON()}});
+    };
+    pc.ontrack = e => {
+      setPeers(p => p.includes(peerId) ? p : [...p, peerId]);
+      /* audioタグを作成して再生 */
+      if(!audioElems.current[peerId]){
+        const audio = document.createElement('audio');
+        audio.autoplay = true;
+        audio.playsInline = true;
+        audio.style.display = 'none';
+        document.body.appendChild(audio);
+        audioElems.current[peerId] = audio;
+      }
+      audioElems.current[peerId].srcObject = e.streams[0];
+      audioElems.current[peerId].play().catch(()=>{});
+    };
     return pc;
   };
 
   const startVC = async () => {
+    if(!supabase){ toast.show('Supabase未設定','error'); return; }
     setStatus('joining');
     try {
       localStream.current = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    } catch(e){ toast.show('マイクへのアクセスが拒否されました','error'); setStatus('idle'); return; }
+    } catch(e){
+      toast.show('マイクへのアクセスが拒否されました','error');
+      setStatus('idle'); return;
+    }
     const ch = supabase.channel(vcRoom, { config:{ broadcast:{ self:false } } });
-    ch.on('broadcast',{event:'offer'},async ({payload})=>{
-      if(payload.to!==myId.current)return;
+    ch
+    .on('broadcast',{event:'offer'}, async ({payload})=>{
+      if(payload.to !== myId.current) return;
       const pc = createPC(payload.from, ch);
       await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       ch.send({type:'broadcast',event:'answer',payload:{from:myId.current,to:payload.from,sdp:answer}});
     })
-    .on('broadcast',{event:'answer'},async ({payload})=>{
-      if(payload.to!==myId.current)return;
+    .on('broadcast',{event:'answer'}, async ({payload})=>{
+      if(payload.to !== myId.current) return;
       const pc = pcsRef.current[payload.from];
-      if(pc) await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+      if(pc && pc.signalingState==='have-local-offer') await pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
     })
-    .on('broadcast',{event:'ice'},async ({payload})=>{
-      if(payload.to!==myId.current)return;
+    .on('broadcast',{event:'ice'}, async ({payload})=>{
+      if(payload.to !== myId.current) return;
       const pc = pcsRef.current[payload.from];
-      if(pc) await pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
+      try{ if(pc) await pc.addIceCandidate(new RTCIceCandidate(payload.candidate)); }catch(e){}
     })
-    .on('broadcast',{event:'join'},async ({payload})=>{
-      if(payload.id===myId.current)return;
+    .on('broadcast',{event:'join'}, async ({payload})=>{
+      if(payload.id === myId.current) return;
       const pc = createPC(payload.id, ch);
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       ch.send({type:'broadcast',event:'offer',payload:{from:myId.current,to:payload.id,sdp:offer}});
     })
-    .on('broadcast',{event:'leave'},({payload})=>{
-      if(pcsRef.current[payload.id]){ pcsRef.current[payload.id].close(); delete pcsRef.current[payload.id]; }
-      setPeers(p=>p.filter(x=>x!==payload.id));
+    .on('broadcast',{event:'leave'}, ({payload})=>{
+      const pc = pcsRef.current[payload.id];
+      if(pc){ pc.close(); delete pcsRef.current[payload.id]; }
+      const audio = audioElems.current[payload.id];
+      if(audio){ audio.remove(); delete audioElems.current[payload.id]; }
+      setPeers(p => p.filter(x => x !== payload.id));
     })
-    .subscribe(()=>{
-      ch.send({type:'broadcast',event:'join',payload:{id:myId.current,label:participantId}});
-      setStatus('connected');
+    .subscribe(status=>{
+      if(status==='SUBSCRIBED'){
+        ch.send({type:'broadcast',event:'join',payload:{id:myId.current,label:participantId}});
+        setStatus('connected');
+      }
     });
-    channelRef.current=ch;
+    channelRef.current = ch;
   };
 
   const leaveVC = () => {
-    const ch=channelRef.current;
-    if(ch){ ch.send({type:'broadcast',event:'leave',payload:{id:myId.current}}); supabase.removeChannel(ch); }
-    Object.values(pcsRef.current).forEach(pc=>pc.close());
-    pcsRef.current={};
-    if(localStream.current){ localStream.current.getTracks().forEach(t=>t.stop()); localStream.current=null; }
+    const ch = channelRef.current;
+    if(ch){ ch.send({type:'broadcast',event:'leave',payload:{id:myId.current}}); supabase.removeChannel(ch); channelRef.current=null; }
+    Object.values(pcsRef.current).forEach(pc => pc.close());
+    pcsRef.current = {};
+    Object.values(audioElems.current).forEach(a => a.remove());
+    audioElems.current = {};
+    if(localStream.current){ localStream.current.getTracks().forEach(t => t.stop()); localStream.current=null; }
     setStatus('idle'); setPeers([]);
   };
 
-  useEffect(()=>()=>{ leaveVC(); },[]);
+  useEffect(() => () => { leaveVC(); }, []);
 
   if(status==='idle') return (
     <button className="btn btn-primary btn-sm" onClick={startVC}>🎤 VC参加</button>
