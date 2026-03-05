@@ -605,6 +605,7 @@ function camelTask(r) {
     isPublished:r.is_published, answerFields:r.answer_fields||[],
     explanationText:r.explanation_text||'',
     explanationImageUrl:r.explanation_image_url||null,
+    modelAnswers:r.model_answers||{},
   };
 }
 function snakeTask(t) {
@@ -619,6 +620,7 @@ function snakeTask(t) {
   if (t.answerFields!==undefined)      o.answer_fields=t.answerFields;
   if (t.explanationText!==undefined)   o.explanation_text=t.explanationText;
   if (t.explanationImageUrl!==undefined) o.explanation_image_url=t.explanationImageUrl;
+  if (t.modelAnswers!==undefined)      o.model_answers=t.modelAnswers;
   return o;
 }
 function camelSub(r) { return { id:r.id, taskId:r.task_id, nickname:r.nickname, answers:r.answers||{}, submittedAt:r.submitted_at }; }
@@ -1107,6 +1109,29 @@ function ScoringTab({ teacher, toast }) {
         </div>
       </div>
 
+      {/* 模範解答パネル */}
+      {fields.some(f=>selTask.modelAnswers?.[f.id])&&(
+        <div className="side-panel" style={{marginBottom:24,border:'2px solid var(--gold)',background:'rgba(201,151,44,.05)'}}>
+          <div className="side-panel-title" style={{color:'var(--gold)'}}>📋 模範解答</div>
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            {fields.map(f=>{
+              const ans = selTask.modelAnswers?.[f.id];
+              if(!ans) return null;
+              return (
+                <div key={f.id} style={{display:'flex',gap:12,alignItems:'flex-start'}}>
+                  <div style={{fontWeight:700,fontSize:13,color:'var(--ink)',minWidth:48,paddingTop:2}}>{f.label}</div>
+                  {f.type==='draw'?(
+                    <img src={ans} alt="模範解答" style={{maxWidth:200,maxHeight:100,borderRadius:6,border:'1px solid var(--paper-dk)',cursor:'pointer'}} onClick={()=>window.open(ans,'_blank')}/>
+                  ):(
+                    <span style={{fontFamily:'DM Mono,monospace',fontSize:15,fontWeight:700,color:'var(--crimson)',background:'rgba(155,27,48,.07)',padding:'4px 12px',borderRadius:6}}>{ans}</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* 採点テーブル */}
       {loading?(
         <div style={{textAlign:'center',padding:'40px'}}><span className="spinner dark" style={{width:28,height:28,borderWidth:3}}/></div>
@@ -1125,6 +1150,11 @@ function ScoringTab({ teacher, toast }) {
                   <th key={f.id}>
                     {f.label}<br/>
                     <span style={{fontWeight:400,color:'var(--stone)'}}>{config[f.id]||0}点</span>
+                    {selTask.modelAnswers?.[f.id]&&f.type!=='draw'&&(
+                      <div style={{fontFamily:'DM Mono,monospace',fontSize:11,color:'var(--crimson)',fontWeight:700,marginTop:2}}>
+                        答: {selTask.modelAnswers[f.id]}
+                      </div>
+                    )}
                   </th>
                 ))}
                 <th>得点</th>
@@ -1763,6 +1793,54 @@ function WhiteboardViewer({ session, nickname, canWrite, canVc, onBack }) {
 /* ══════════════════════════════════
    課題作成
 ══════════════════════════════════ */
+/* 線画型模範解答 入力コンポーネント */
+function ModelDrawAnswer({ fid, value, onChange }) {
+  const canvasRef = useRef(null);
+  const drawing   = useRef(false);
+  const fileRef   = useRef(null);
+  const [hasDrawing, setHasDrawing] = useState(!!value);
+
+  useEffect(()=>{
+    const c = canvasRef.current; if(!c) return;
+    c.width=900; c.height=300;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height);
+    if(value){
+      const img=new Image();
+      img.onload=()=>ctx.drawImage(img,0,0,c.width,c.height);
+      img.src=value;
+    }
+  },[]);
+
+  const getPos=(e,c)=>{const r=c.getBoundingClientRect();const t=e.touches?.[0]||e;return{x:(t.clientX-r.left)*(c.width/r.width),y:(t.clientY-r.top)*(c.height/r.height)};};
+  const onDown=(e)=>{const c=canvasRef.current;if(!c)return;e.preventDefault();const ctx=c.getContext('2d');const p=getPos(e,c);ctx.beginPath();ctx.moveTo(p.x,p.y);drawing.current=true;};
+  const onMove=(e)=>{if(!drawing.current)return;const c=canvasRef.current;if(!c)return;e.preventDefault();const ctx=c.getContext('2d');const p=getPos(e,c);ctx.strokeStyle='#9B1B30';ctx.lineWidth=3;ctx.lineCap='round';ctx.lineTo(p.x,p.y);ctx.stroke();};
+  const onUp=(e)=>{if(!drawing.current)return;drawing.current=false;const c=canvasRef.current;if(!c)return;const data=c.toDataURL('image/png');onChange(data);setHasDrawing(true);};
+  const clearCanvas=()=>{const c=canvasRef.current;if(!c)return;const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);onChange(null);setHasDrawing(false);};
+  const handleFile=(file)=>{if(!file||!file.type.startsWith('image/'))return;const r=new FileReader();r.onload=ev=>{const img=new Image();img.onload=()=>{const c=canvasRef.current;if(!c)return;const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(img,0,0,c.width,c.height);onChange(c.toDataURL('image/png'));setHasDrawing(true);};img.src=ev.target.result;};r.readAsDataURL(file);};
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:8}}>
+      <div style={{border:'2px solid var(--paper-dk)',borderRadius:8,overflow:'hidden',background:'#fff',position:'relative'}}>
+        <canvas ref={canvasRef}
+          style={{width:'100%',display:'block',cursor:'crosshair',touchAction:'none'}}
+          onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
+          onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}/>
+        {!hasDrawing&&(
+          <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',pointerEvents:'none',color:'var(--stone-lt)',fontSize:13}}>
+            ここに書くか、下から画像をアップロード
+          </div>
+        )}
+      </div>
+      <div style={{display:'flex',gap:8}}>
+        <button className="btn btn-ghost btn-sm" onClick={()=>fileRef.current.click()}>🖼 画像アップロード</button>
+        <button className="btn btn-ghost btn-sm" style={{color:'var(--crimson)'}} onClick={clearCanvas}>🗑 クリア</button>
+        <input ref={fileRef} type="file" accept="image/*" style={{display:'none'}} onChange={e=>handleFile(e.target.files?.[0])}/>
+      </div>
+    </div>
+  );
+}
+
 function TaskCreator({ teacher, onDone, toast }) {
   const [title,setTitle]=useState(''); const [desc,setDesc]=useState('');
   const [imgUrl,setImgUrl]=useState(null); const [fields,setFields]=useState([]);
@@ -1774,6 +1852,7 @@ function TaskCreator({ teacher, onDone, toast }) {
   const [labelInput,setLabelInput]=useState('');
   const [expText,setExpText]=useState('');
   const [expImg,setExpImg]=useState(null);
+  const [modelAnswers,setModelAnswers]=useState({}); // {fieldId: string}
   /* ドラッグ移動用 */
   const [dragState,setDragState]=useState(null); // {fid, ox, oy}
   /* スマホ向け：数値入力モード */
@@ -1875,7 +1954,7 @@ function TaskCreator({ teacher, onDone, toast }) {
     if(!title.trim()){toast.show('課題タイトルを入力してください','error');return;}
     setSaving(true);
     try {
-      await DB.createTask({id:genId(),title:title.trim(),description:desc.trim(),imageDataUrl:imgUrl,accessCode:genCode(),createdBy:teacher.teacherId,isPublished:false,answerFields:fields,explanationText:expText.trim(),explanationImageUrl:expImg});
+      await DB.createTask({id:genId(),title:title.trim(),description:desc.trim(),imageDataUrl:imgUrl,accessCode:genCode(),createdBy:teacher.teacherId,isPublished:false,answerFields:fields,explanationText:expText.trim(),explanationImageUrl:expImg,modelAnswers});
       toast.show('課題を保存しました','success');
       onDone();
     } catch(e){toast.show('保存エラー: '+e.message,'error');}
@@ -1884,7 +1963,7 @@ function TaskCreator({ teacher, onDone, toast }) {
 
   const drawRect=drawing?{left:Math.min(drawing.x0,drawing.x1)+'%',top:Math.min(drawing.y0,drawing.y1)+'%',width:Math.abs(drawing.x1-drawing.x0)+'%',height:Math.abs(drawing.y1-drawing.y0)+'%'}:null;
 
-  const stepLabels=['課題情報','プリントアップロード','回答欄の配置','解説を設定'];
+  const stepLabels=['課題情報','プリントアップロード','回答欄の配置','模範解答','解説を設定'];
 
   return (
     <div className="main">
@@ -2050,17 +2129,61 @@ function TaskCreator({ teacher, onDone, toast }) {
                 </>
               )}
               <div className="divider"/>
-              <button className="btn btn-primary btn-full" onClick={()=>setStep(4)}>次へ：解説を設定 →</button>
+              <button className="btn btn-primary btn-full" onClick={()=>setStep(4)}>次へ：模範解答を設定 →</button>
               <button className="btn btn-ghost btn-full btn-sm" onClick={()=>setStep(2)}>← 戻る</button>
             </div>
           </div>
         </>
       )}
 
-      {/* Step4: 解説 */}
+      {/* Step4: 模範解答 */}
       {step===4&&(
         <div className="form-box" style={{maxWidth:640}}>
-          <div className="form-title">④ 解説を設定（任意）</div>
+          <div className="form-title">④ 模範解答を設定（任意）</div>
+          <div style={{fontSize:13,color:'var(--stone)',marginBottom:20,lineHeight:1.8}}>
+            各回答欄の模範解答を入力してください。採点タブで生徒の回答と並べて表示されます。<br/>
+            線画欄は画像でアップロードできます。
+          </div>
+          {fields.length===0?(
+            <div style={{textAlign:'center',padding:'30px',color:'var(--stone)',background:'var(--paper)',borderRadius:10}}>
+              回答欄が設定されていません。Step3に戻って追加してください。
+            </div>
+          ):(
+            <div style={{display:'flex',flexDirection:'column',gap:16}}>
+              {fields.map((f,i)=>(
+                <div key={f.id} style={{background:'var(--paper)',borderRadius:10,padding:'14px 16px',border:'2px solid var(--paper-dk)'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+                    <span style={{fontWeight:700,fontSize:14,color:'var(--ink)'}}>{f.label}</span>
+                    <span className={`type-pill ${f.type==='number'?'type-number':f.type==='draw'?'type-draw':'type-text'}`}>
+                      {f.type==='draw'?'✏️ 線画':f.type==='number'?'🔢 数値':'📝 テキスト'}
+                    </span>
+                  </div>
+                  {f.type==='draw'?(
+                    /* 線画：画像アップロード or キャンバス */
+                    <ModelDrawAnswer fid={f.id} value={modelAnswers[f.id]||null}
+                      onChange={v=>setModelAnswers(a=>({...a,[f.id]:v}))}/>
+                  ):(
+                    <input
+                      className="form-input"
+                      type={f.type==='number'?'number':'text'}
+                      placeholder={`${f.label} の模範解答…`}
+                      value={modelAnswers[f.id]||''}
+                      onChange={e=>setModelAnswers(a=>({...a,[f.id]:e.target.value}))}/>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="divider"/>
+          <button className="btn btn-primary btn-full" onClick={()=>setStep(5)}>次へ：解説を設定 →</button>
+          <button className="btn btn-ghost btn-full btn-sm mt-8" onClick={()=>setStep(3)}>← 回答欄の設定に戻る</button>
+        </div>
+      )}
+
+      {/* Step5: 解説 */}
+      {step===5&&(
+        <div className="form-box" style={{maxWidth:640}}>
+          <div className="form-title">⑤ 解説を設定（任意）</div>
           <div style={{fontSize:13,color:'var(--stone)',marginBottom:20,lineHeight:1.8}}>
             生徒が回答を提出した後に表示される解説です。設定しない場合は提出完了画面のみ表示されます。
           </div>
@@ -2087,7 +2210,7 @@ function TaskCreator({ teacher, onDone, toast }) {
           <button className="btn btn-primary btn-full btn-lg" disabled={saving} onClick={save}>
             {saving?<><span className="spinner"/> 保存中…</>:'💾 課題を保存する'}
           </button>
-          <button className="btn btn-ghost btn-full btn-sm mt-8" onClick={()=>setStep(3)}>← 回答欄の設定に戻る</button>
+          <button className="btn btn-ghost btn-full btn-sm mt-8" onClick={()=>setStep(4)}>← 模範解答の設定に戻る</button>
         </div>
       )}
 
