@@ -2087,9 +2087,20 @@ function StudentRegister({ onDone, toast }) {
 
 /* ── チャットコンポーネント（共用・ルーム切替対応） ── */
 function ChatPanel({ myId, myLabel, senderType, teachers, toast }) {
+  /* 先生側は生徒DM、生徒側は先生DM としてルームを構築 */
+  const isTeacher = senderType === 'teacher';
   const rooms = [
     { id: 'general', label: '🌐 全体チャット' },
-    ...(teachers||[]).map(t=>({ id:'teacher_'+t.teacher_id, label:'👩‍🏫 '+t.teacher_id }))
+    ...(teachers||[]).map(p => {
+      if(isTeacher){
+        /* 先生が見るDM一覧 → 生徒名を表示 */
+        const sid = p.student_id || p.id;
+        return { id:'teacher_'+sid, label:'🧑‍🎓 '+(p.student_id||p.id) };
+      } else {
+        /* 生徒が見るDM一覧 → 先生名を表示 */
+        return { id:'teacher_'+p.teacher_id, label:'✉️ '+p.teacher_id+' 先生へ' };
+      }
+    })
   ];
 
   const [roomId, setRoomId]         = useState('general');
@@ -2489,12 +2500,12 @@ function VCPanel({ participantId, roomCode, toast }) {
 
 /* ── 教師チャットタブ ── */
 function TeacherChatTab({ teacher, toast }) {
-  const [teachers, setTeachers] = useState([]);
-  useEffect(()=>{ DB.getTeachers().then(setTeachers).catch(()=>{}); },[]);
+  const [students, setStudents] = useState([]);
+  useEffect(()=>{ DB.getStudents().then(ss=>setStudents(ss.filter(s=>s.is_approved))).catch(()=>{}); },[]);
   return (
     <div style={{maxWidth:720}}>
       <div style={{fontFamily:'Noto Serif JP',fontSize:18,fontWeight:700,color:'var(--crimson-dk)',marginBottom:16}}>💬 チャット</div>
-      <ChatPanel myId={teacher.teacherId} myLabel={'👩‍🏫 '+teacher.teacherId} senderType="teacher" teachers={teachers} toast={toast}/>
+      <ChatPanel myId={teacher.teacherId} myLabel={'👩‍🏫 '+teacher.teacherId} senderType="teacher" teachers={students} toast={toast}/>
     </div>
   );
 }
