@@ -1776,6 +1776,8 @@ function TaskCreator({ teacher, onDone, toast }) {
   const [expImg,setExpImg]=useState(null);
   /* ドラッグ移動用 */
   const [dragState,setDragState]=useState(null); // {fid, ox, oy}
+  /* スマホ向け：数値入力モード */
+  const [placeMode,setPlaceMode]=useState('drag'); // 'drag' | 'numeric'
 
   const canvasRef=useRef(null); const fileRef=useRef(null); const expImgRef=useRef(null);
 
@@ -1845,6 +1847,21 @@ function TaskCreator({ teacher, onDone, toast }) {
     setShowLabelModal(false); setPendingField(null);
   };
   const deleteField=(id)=>{setFields(fs=>fs.filter(f=>f.id!==id));if(selField===id)setSelField(null);};
+
+  /* 数値モードで回答欄を追加 */
+  const addFieldNumeric=()=>{
+    const nf={id:genId(),type:mode,
+      x:5, y:5+fields.length*12,
+      width:mode==='draw'?40:25,
+      height:mode==='draw'?15:7,
+      label:`問${fields.length+1}`};
+    setFields(fs=>[...fs,nf]); setSelField(nf.id);
+  };
+  /* 選択中フィールドの数値を直接変更 */
+  const updateFieldProp=(id,key,val)=>{
+    const num=Math.max(0,Math.min(key==='x'||key==='width'?100:100,Number(val)));
+    setFields(fs=>fs.map(f=>f.id===id?{...f,[key]:num}:f));
+  };
   const handleFile=(file)=>{
     if(!file)return;
     if(!file.type.startsWith('image/')&&file.type!=='application/pdf'){toast.show('画像またはPDFを選択してください','error');return;}
@@ -1917,11 +1934,20 @@ function TaskCreator({ teacher, onDone, toast }) {
                 <button className={`btn btn-sm ${mode==='text'?'btn-primary':'btn-ghost'}`} onClick={()=>setMode('text')}>📝 テキスト</button>
                 <button className={`btn btn-sm ${mode==='number'?'btn-primary':'btn-ghost'}`} onClick={()=>setMode('number')}>🔢 数値</button>
                 <button className={`btn btn-sm ${mode==='draw'?'btn-primary':'btn-ghost'}`} onClick={()=>setMode('draw')}>✏️ 線画</button>
-                <div style={{flex:1}}/><span style={{fontSize:11,color:'var(--stone)'}}>{imgUrl?'ドラッグして配置・枠をつかんで移動':'プリントなし'}</span>
+                <div style={{width:1,height:20,background:'var(--stone-lt)',margin:'0 4px'}}/>
+                <span style={{fontSize:12,fontWeight:700,color:'var(--stone)'}}>配置方法：</span>
+                <button className={`btn btn-sm ${placeMode==='drag'?'btn-gold':'btn-ghost'}`} onClick={()=>setPlaceMode('drag')}>🖱 ドラッグ</button>
+                <button className={`btn btn-sm ${placeMode==='numeric'?'btn-gold':'btn-ghost'}`} onClick={()=>setPlaceMode('numeric')}>📱 数値入力</button>
+                <div style={{flex:1}}/><span style={{fontSize:11,color:'var(--stone)'}}>{imgUrl?(placeMode==='drag'?'ドラッグして配置':'右パネルで数値指定'):'プリントなし'}</span>
               </div>
               <div className="canvas-area" ref={canvasRef}
-                onMouseDown={onCanvasDown} onMouseMove={onCanvasMove} onMouseUp={onCanvasUp}
-                onTouchStart={onCanvasDown} onTouchMove={onCanvasMove} onTouchEnd={onCanvasUp}>
+                style={{touchAction: placeMode==='drag'?'none':'auto'}}
+                onMouseDown={placeMode==='drag'?onCanvasDown:undefined}
+                onMouseMove={placeMode==='drag'?onCanvasMove:undefined}
+                onMouseUp={placeMode==='drag'?onCanvasUp:undefined}
+                onTouchStart={placeMode==='drag'?onCanvasDown:undefined}
+                onTouchMove={placeMode==='drag'?onCanvasMove:undefined}
+                onTouchEnd={placeMode==='drag'?onCanvasUp:undefined}>
                 {imgUrl?(<>
                   <img src={imgUrl} alt="プリント" draggable={false}/>
                   {fields.map(f=>(
@@ -1946,7 +1972,7 @@ function TaskCreator({ teacher, onDone, toast }) {
             </div>
             <div className="side-panel">
               <div className="side-panel-title">回答欄リスト</div>
-              {fields.length===0?(<div className="empty-hint">{imgUrl?'プリント上をドラッグして配置':'下のボタンで追加'}</div>):(
+              {fields.length===0?(<div className="empty-hint">{imgUrl?(placeMode==='drag'?'プリント上をドラッグして配置':'下の「追加」ボタンで追加'):'下のボタンで追加'}</div>):(
                 <div className="field-list">
                   {fields.map((f,i)=>(
                     <div key={f.id} className={`field-item ${selField===f.id?'selected':''}`} onClick={()=>setSelField(f.id)}>
@@ -1964,21 +1990,63 @@ function TaskCreator({ teacher, onDone, toast }) {
                   ))}
                 </div>
               )}
-              {!imgUrl&&(
+
+              {/* 数値入力モード：追加ボタン */}
+              {(placeMode==='numeric'||!imgUrl)&&(
+                <>
+                  <div className="divider"/>
+                  <button className="btn btn-secondary btn-full" onClick={addFieldNumeric}>＋ 回答欄を追加</button>
+                </>
+              )}
+
+              {/* 選択中フィールドの位置・サイズ数値編集 */}
+              {selField&&(()=>{
+                const f=fields.find(f=>f.id===selField);
+                if(!f)return null;
+                return(
+                  <>
+                    <div className="divider"/>
+                    <div style={{fontSize:12,fontWeight:700,color:'var(--crimson-dk)',marginBottom:8}}>
+                      📐 「{f.label}」の位置・サイズ
+                    </div>
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                      {[
+                        {key:'x',    label:'左端 (%)'},
+                        {key:'y',    label:'上端 (%)'},
+                        {key:'width', label:'幅 (%)'},
+                        {key:'height',label:'高さ (%)'},
+                      ].map(({key,label})=>(
+                        <div key={key} style={{display:'flex',flexDirection:'column',gap:3}}>
+                          <label style={{fontSize:11,fontWeight:700,color:'var(--stone)'}}>{label}</label>
+                          <input type="number" min="0" max="100" step="0.5"
+                            className="form-input"
+                            style={{padding:'6px 8px',fontSize:13,textAlign:'center'}}
+                            value={Math.round(f[key]*10)/10}
+                            onChange={e=>updateFieldProp(f.id,key,e.target.value)}/>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{marginTop:8}}>
+                      <label style={{fontSize:11,fontWeight:700,color:'var(--stone)',display:'block',marginBottom:3}}>ラベル</label>
+                      <input className="form-input" style={{padding:'6px 8px',fontSize:13}}
+                        value={f.label}
+                        onChange={e=>setFields(fs=>fs.map(ff=>ff.id===f.id?{...ff,label:e.target.value}:ff))}/>
+                    </div>
+                  </>
+                );
+              })()}
+
+              {!imgUrl&&!fields.length&&(
                 <>
                   <div className="divider"/>
                   <div className="form-group" style={{gap:4}}>
-                    <label className="form-label">手動で追加</label>
+                    <label className="form-label">種類を選択</label>
                     <select className="form-select" value={mode} onChange={e=>setMode(e.target.value)}>
                       <option value="text">テキスト</option>
                       <option value="number">数値</option>
                       <option value="draw">線画</option>
                     </select>
                   </div>
-                  <button className="btn btn-secondary btn-full" onClick={()=>{
-                    const f={id:genId(),type:mode,x:5,y:5+fields.length*10,width:40,height:mode==='draw'?20:6,label:`問${fields.length+1}`};
-                    setFields(fs=>[...fs,f]);setSelField(f.id);
-                  }}>＋ 回答欄を追加</button>
                 </>
               )}
               <div className="divider"/>
