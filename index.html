@@ -573,6 +573,27 @@ const DB = {
     }]);
     if (error) throw error;
   },
+
+  /* 採点フィードバック */
+  async sendFeedback(fb) {
+    if (!supabase) throw new Error('Supabase未設定');
+    const { error } = await supabase.from('submission_feedback').upsert([fb], { onConflict: 'submission_id' });
+    if (error) throw error;
+  },
+  async getMyFeedback(studentId) {
+    if (!supabase) return [];
+    const { data, error } = await supabase.from('submission_feedback')
+      .select('*').eq('student_id', studentId).order('sent_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+  async getSubmissionsByStudent(studentId) {
+    if (!supabase) return [];
+    const { data, error } = await supabase.from('submissions')
+      .select('*').eq('nickname', studentId).order('submitted_at', { ascending: false });
+    if (error) throw error;
+    return (data || []).map(camelSub);
+  },
 };
 
 /* 変換 */
@@ -948,6 +969,9 @@ function TasksTab({ teacher, onCreate, onEdit, onReview, toast }) {
 }
 function ScoringTab({ teacher, toast }) {
   const [tasks,setTasks]=useState([]); const [selTask,setSelTask]=useState(null); const [subs,setSubs]=useState([]); const [scorings,setScorings]=useState([]); const [config,setConfig]=useState({}); const [loading,setLoading]=useState(false); const [saving,setSaving]=useState(false);
+  const [comments,setComments]=useState({});   // { submissionId: string }
+  const [sending,setSending]=useState({});     // { submissionId: bool }
+  const [sent,setSent]=useState({});           // { submissionId: bool }
 
   useEffect(()=>{
     DB.getTasks().then(setTasks).catch(e=>toast.show('取得エラー','error'));
@@ -958,6 +982,13 @@ function ScoringTab({ teacher, toast }) {
     try {
       const [s, sc, cfg] = await Promise.all([DB.getSubmissions(task.id), DB.getScorings(task.id), DB.getScoringConfig(task.id)]);
       setSubs(s); setScorings(sc); setConfig(cfg);
+      /* 既存フィードバック読み込み */
+      if (supabase) {
+        const { data: fbs } = await supabase.from('submission_feedback').select('*').eq('task_id', task.id);
+        const cmap={}, smap={};
+        (fbs||[]).forEach(fb=>{ cmap[fb.submission_id]=fb.teacher_comment||''; smap[fb.submission_id]=true; });
+        setComments(cmap); setSent(smap);
+      }
     } catch(e){toast.show('取得エラー: '+e.message,'error');}
     finally{setLoading(false);}
   };
@@ -983,6 +1014,30 @@ function ScoringTab({ teacher, toast }) {
     try { await DB.saveScoringConfig(selTask.id, config); toast.show('配点を保存しました','success'); }
     catch(e){toast.show('保存エラー: '+e.message,'error');}
     finally{setSaving(false);}
+  };
+
+  const sendFeedback = async (sub) => {
+    setSending(s=>({...s,[sub.id]:true}));
+    try {
+      const {earned,total} = calcScore(sub);
+      const fieldMarks = {};
+      (selTask.answerFields||[]).forEach(f=>{ fieldMarks[f.id]=getMark(sub.id,f.id)||null; });
+      await DB.sendFeedback({
+        id: 'fb_'+sub.id,
+        submission_id: sub.id,
+        task_id: selTask.id,
+        task_title: selTask.title,
+        student_id: sub.nickname,
+        total_score: earned,
+        max_score: total,
+        field_marks: fieldMarks,
+        teacher_comment: comments[sub.id]||'',
+        sent_at: new Date().toISOString(),
+      });
+      setSent(s=>({...s,[sub.id]:true}));
+      toast.show(`${sub.nickname} に採点結果を送信しました`,'success');
+    } catch(e){toast.show('送信エラー: '+e.message,'error');}
+    finally{setSending(s=>({...s,[sub.id]:false}));}
   };
 
   const calcScore = (sub) => {
@@ -1073,6 +1128,7 @@ function ScoringTab({ teacher, toast }) {
                   </th>
                 ))}
                 <th>得点</th>
+                <th>コメント・送信</th>
               </tr>
             </thead>
             <tbody>
@@ -1112,6 +1168,24 @@ function ScoringTab({ teacher, toast }) {
                     <td>
                       <span className="score-total">{earned}</span>
                       <span style={{fontSize:12,color:'var(--stone)'}}> / {total}</span>
+                    </td>
+                    <td style={{minWidth:200}}>
+                      <textarea
+                        placeholder="先生からのコメント…"
+                        value={comments[sub.id]||''}
+                        onChange={e=>setComments(c=>({...c,[sub.id]:e.target.value}))}
+                        style={{width:'100%',padding:'6px 8px',fontSize:12,border:'2px solid var(--paper-dk)',borderRadius:6,resize:'vertical',minHeight:52,fontFamily:'Noto Sans JP,sans-serif',background:'var(--paper)',outline:'none'}}
+                        onFocus={e=>e.target.style.borderColor='var(--crimson)'}
+                        onBlur={e=>e.target.style.borderColor='var(--paper-dk)'}
+                      />
+                      <button
+                        className={`btn btn-sm btn-full ${sent[sub.id]?'btn-green':'btn-primary'}`}
+                        style={{marginTop:6}}
+                        onClick={()=>sendFeedback(sub)}
+                        disabled={sending[sub.id]}>
+                        {sending[sub.id]?<><span className="spinner"/> 送信中…</>
+                          :sent[sub.id]?'✓ 送信済み（再送）':'📤 採点結果を送信'}
+                      </button>
                     </td>
                   </tr>
                 );
@@ -2321,6 +2395,7 @@ function StudentDashboard({ student, toast, onLogout }) {
       <div className="dash-tabs" style={{marginTop:20}}>
         <button className={`dash-tab ${activeTab==='tasks'?'active':''}`} onClick={()=>setActiveTab('tasks')}>📋 課題・ライブ</button>
         {showViewer&&<button className={`dash-tab ${activeTab==='live'?'active':''}`} onClick={()=>setActiveTab('live')}><span className="live-dot" style={{display:'inline-block',marginRight:4}}/>LIVE</button>}
+        <button className={`dash-tab ${activeTab==='review'?'active':''}`} onClick={()=>setActiveTab('review')}>📊 振り返り</button>
         <button className={`dash-tab ${activeTab==='chat'?'active':''}`} onClick={()=>setActiveTab('chat')}>💬 チャット</button>
       </div>
 
@@ -2367,6 +2442,10 @@ function StudentDashboard({ student, toast, onLogout }) {
             )}
           </div>
         </div>
+      )}
+
+      {activeTab==='review'&&(
+        <StudentReviewTab student={student} toast={toast}/>
       )}
 
       {activeTab==='chat'&&(
@@ -2593,6 +2672,98 @@ function StudentCodeEntry({ onEnter, onWatchLive, toast }) {
 }
 
 /* ── 生徒：回答シート ── */
+/* ══════════════════════════════════
+   生徒：振り返りタブ
+══════════════════════════════════ */
+function StudentReviewTab({ student, toast }) {
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [expanded, setExpanded]   = useState(null);
+
+  useEffect(()=>{
+    DB.getMyFeedback(student.studentId)
+      .then(setFeedbacks)
+      .catch(()=>toast.show('取得エラー','error'))
+      .finally(()=>setLoading(false));
+  },[student.studentId]);
+
+  const markLabel = m => m==='correct'?'○':m==='partial'?'△':m==='wrong'?'✕':'—';
+  const markColor = m => m==='correct'?'#065F46':m==='partial'?'#D97706':m==='wrong'?'#DC2626':'var(--stone)';
+
+  if(loading) return <div style={{textAlign:'center',padding:'60px'}}><span className="spinner dark" style={{width:32,height:32,borderWidth:4}}/></div>;
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:14}}>
+      <div className="dashboard-title" style={{marginBottom:4}}>📊 振り返り</div>
+      <div style={{fontSize:13,color:'var(--stone)'}}>先生から採点結果が送られると、ここに表示されます。</div>
+
+      {feedbacks.length===0 ? (
+        <div style={{textAlign:'center',padding:'60px',color:'var(--stone)'}}>
+          <div style={{fontSize:48,marginBottom:12}}>📭</div>
+          <div>まだ採点結果が届いていません</div>
+        </div>
+      ) : feedbacks.map(fb=>(
+        <div key={fb.id} style={{background:'var(--white)',border:'2px solid var(--paper-dk)',borderRadius:14,overflow:'hidden',boxShadow:'0 1px 6px var(--shadow)'}}>
+          {/* ヘッダー */}
+          <div
+            style={{padding:'16px 20px',display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer',gap:12,flexWrap:'wrap'}}
+            onClick={()=>setExpanded(expanded===fb.id?null:fb.id)}>
+            <div style={{display:'flex',flexDirection:'column',gap:4}}>
+              <div style={{fontFamily:'Noto Serif JP',fontSize:16,fontWeight:700,color:'var(--ink)'}}>{fb.task_title||'課題'}</div>
+              <div style={{fontSize:12,color:'var(--stone)'}}>{fb.sent_at?.slice(0,16).replace('T',' ')} に採点</div>
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:16}}>
+              {/* スコアリング */}
+              <div style={{textAlign:'center'}}>
+                <div style={{fontFamily:'DM Mono',fontSize:28,fontWeight:700,color:'var(--crimson)'}}>
+                  {fb.total_score}
+                  <span style={{fontSize:16,color:'var(--stone)',fontWeight:400}}> / {fb.max_score}</span>
+                </div>
+                <div style={{fontSize:11,color:'var(--stone)'}}>得点</div>
+              </div>
+              {/* 進捗バー */}
+              <div style={{width:80}}>
+                <div style={{height:8,borderRadius:4,background:'var(--paper-dk)',overflow:'hidden'}}>
+                  <div style={{height:'100%',borderRadius:4,background:fb.max_score>0?(fb.total_score/fb.max_score>=0.8?'var(--green)':fb.total_score/fb.max_score>=0.5?'var(--gold)':'var(--crimson)'):'var(--paper-dk)',width:fb.max_score>0?Math.round(fb.total_score/fb.max_score*100)+'%':'0%',transition:'width .4s'}}/>
+                </div>
+                <div style={{fontSize:10,color:'var(--stone)',textAlign:'right',marginTop:3}}>{fb.max_score>0?Math.round(fb.total_score/fb.max_score*100):0}%</div>
+              </div>
+              <div style={{fontSize:18,color:'var(--stone)',transform:expanded===fb.id?'rotate(180deg)':'none',transition:'transform .2s'}}>▼</div>
+            </div>
+          </div>
+
+          {/* 展開詳細 */}
+          {expanded===fb.id&&(
+            <div style={{borderTop:'2px solid var(--paper-dk)',padding:'16px 20px',display:'flex',flexDirection:'column',gap:14}}>
+              {/* 設問ごとの採点 */}
+              {fb.field_marks&&Object.keys(fb.field_marks).length>0&&(
+                <div>
+                  <div style={{fontSize:13,fontWeight:700,color:'var(--stone)',marginBottom:8}}>設問ごとの結果</div>
+                  <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                    {Object.entries(fb.field_marks).map(([fid,mark])=>(
+                      <div key={fid} style={{background:'var(--paper)',border:'1.5px solid var(--paper-dk)',borderRadius:8,padding:'8px 14px',display:'flex',flexDirection:'column',alignItems:'center',gap:4,minWidth:60}}>
+                        <div style={{fontSize:11,color:'var(--stone)',fontWeight:700}}>{fid.slice(-4)}</div>
+                        <div style={{fontSize:22,fontWeight:700,color:markColor(mark)}}>{markLabel(mark)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* 先生コメント */}
+              {fb.teacher_comment&&(
+                <div style={{background:'rgba(201,151,44,.07)',border:'2px solid var(--gold)',borderRadius:10,padding:'14px 16px'}}>
+                  <div style={{fontSize:12,fontWeight:700,color:'var(--gold)',marginBottom:6}}>👩‍🏫 先生のコメント</div>
+                  <div style={{fontSize:14,color:'var(--ink)',lineHeight:1.8,whiteSpace:'pre-wrap'}}>{fb.teacher_comment}</div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function AnswerSheet({ task, nickname, onSubmit }) {
   const [answers,setAnswers]   = useState({});
   const [submitted,setSubmitted] = useState(false);
@@ -2656,6 +2827,42 @@ function AnswerSheet({ task, nickname, onSubmit }) {
     setAnswers(a=>({...a,[fid]:''}));
   };
 
+  /* スマホ向け：モーダルキャンバスで別途書かせる */
+  const [popupFid, setPopupFid] = useState(null);
+  const popupCanvasRef = useRef(null);
+  const popupTool = useRef({drawing:false});
+  const openDrawPopup = (fid) => {
+    setPopupFid(fid);
+    // 既存の内容をpopupCanvasにコピー
+    setTimeout(()=>{
+      const src=drawCanvases.current[fid];
+      const dst=popupCanvasRef.current;
+      if(!dst)return;
+      dst.width=900; dst.height=600;
+      const ctx=dst.getContext('2d');
+      ctx.fillStyle='#fff'; ctx.fillRect(0,0,900,600);
+      if(src) ctx.drawImage(src,0,0,900,600);
+    },50);
+  };
+  const getPopupPos=(e,c)=>{const r=c.getBoundingClientRect();const t=e.touches?.[0]||e;return{x:(t.clientX-r.left)*(c.width/r.width),y:(t.clientY-r.top)*(c.height/r.height)};};
+  const onPopupDown=(e)=>{const c=popupCanvasRef.current;if(!c)return;e.preventDefault();const pos=getPopupPos(e,c);const ctx=c.getContext('2d');ctx.beginPath();ctx.moveTo(pos.x,pos.y);popupTool.current.drawing=true;};
+  const onPopupMove=(e)=>{if(!popupTool.current.drawing)return;const c=popupCanvasRef.current;if(!c)return;e.preventDefault();const pos=getPopupPos(e,c);const ctx=c.getContext('2d');ctx.strokeStyle='#1A1410';ctx.lineWidth=3;ctx.lineCap='round';ctx.lineTo(pos.x,pos.y);ctx.stroke();};
+  const onPopupUp=(e)=>{popupTool.current.drawing=false;};
+  const confirmPopup=()=>{
+    const c=popupCanvasRef.current; if(!c||!popupFid)return;
+    /* 元のキャンバスにコピー */
+    const src=drawCanvases.current[popupFid];
+    if(src){const ctx=src.getContext('2d');ctx.clearRect(0,0,src.width,src.height);ctx.drawImage(c,0,0,src.width,src.height);}
+    /* 保存 */
+    const tmp=document.createElement('canvas');
+    tmp.width=c.width; tmp.height=c.height;
+    const tctx=tmp.getContext('2d');
+    tctx.fillStyle='#fff'; tctx.fillRect(0,0,tmp.width,tmp.height);
+    tctx.drawImage(c,0,0);
+    setAnswers(a=>({...a,[popupFid]:tmp.toDataURL('image/png')}));
+    setPopupFid(null);
+  };
+
   const handleSubmit=async()=>{
     if(nonDrawFilled<nonDrawTotal){
       if(!window.confirm(`まだ ${nonDrawTotal-nonDrawFilled} 問が未入力です。このまま提出しますか？`))return;
@@ -2703,9 +2910,13 @@ function AnswerSheet({ task, nickname, onSubmit }) {
                 <div key={f.id} style={{position:'absolute',left:f.x+'%',top:f.y+'%',width:f.width+'%',height:f.height+'%',border:'2px dashed var(--crimson)',borderRadius:4,overflow:'hidden',background:'transparent'}}>
                   <canvas
                     ref={el=>{if(el&&!el._init){el.width=900;el.height=300;el._init=true;} drawCanvases.current[f.id]=el;}}
-                    style={{width:'100%',height:'100%',cursor:'crosshair',display:'block',background:'transparent'}}
+                    style={{width:'100%',height:'100%',cursor:'crosshair',display:'block',background:'transparent',touchAction:'none'}}
                     onMouseDown={e=>onDrawDown(e,f.id)} onMouseMove={e=>onDrawMove(e,f.id)} onMouseUp={e=>onDrawUp(e,f.id)} onMouseLeave={e=>onDrawUp(e,f.id)}
                     onTouchStart={e=>onDrawDown(e,f.id)} onTouchMove={e=>onDrawMove(e,f.id)} onTouchEnd={e=>onDrawUp(e,f.id)}/>
+                  {/* スマホ向け：別ウィンドウで書くボタン */}
+                  <button
+                    style={{position:'absolute',bottom:4,right:4,padding:'3px 8px',fontSize:10,background:'rgba(155,27,48,.85)',color:'white',border:'none',borderRadius:4,cursor:'pointer',fontFamily:'Noto Sans JP,sans-serif'}}
+                    onClick={()=>openDrawPopup(f.id)}>✏️ 拡大</button>
                 </div>
               );
               return (
@@ -2731,8 +2942,9 @@ function AnswerSheet({ task, nickname, onSubmit }) {
                 </span>
               </label>
               {f.type==='draw'?(
-                <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                <div style={{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap'}}>
                   <span style={{fontSize:12,color:'var(--stone)'}}>プリント上の枠に直接描いてください</span>
+                  <button className="btn btn-ghost btn-sm" style={{fontSize:11}} onClick={()=>openDrawPopup(f.id)}>📱 拡大して書く</button>
                   <button className="btn btn-ghost btn-sm" style={{fontSize:11}} onClick={()=>clearDraw(f.id)}>🗑 クリア</button>
                 </div>
               ):(
@@ -2753,6 +2965,27 @@ function AnswerSheet({ task, nickname, onSubmit }) {
           {loading?<><span className="spinner"/> 提出中…</>:'提出する 📩'}
         </button>
       </div>
+
+      {/* 拡大描画モーダル（スマホ向け） */}
+      {popupFid&&(
+        <div style={{position:'fixed',inset:0,background:'rgba(26,20,16,.75)',zIndex:300,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:12}}>
+          <div style={{background:'white',borderRadius:14,width:'100%',maxWidth:700,display:'flex',flexDirection:'column',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,.35)'}}>
+            <div style={{padding:'12px 16px',background:'var(--crimson-dk)',color:'white',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <div style={{fontFamily:'Noto Serif JP',fontWeight:700,fontSize:15}}>✏️ 解答を書く（拡大）</div>
+              <button style={{background:'transparent',border:'none',color:'white',fontSize:20,cursor:'pointer',lineHeight:1}} onClick={()=>setPopupFid(null)}>✕</button>
+            </div>
+            <canvas ref={popupCanvasRef}
+              style={{width:'100%',display:'block',cursor:'crosshair',touchAction:'none',borderBottom:'2px solid var(--paper-dk)'}}
+              onMouseDown={onPopupDown} onMouseMove={onPopupMove} onMouseUp={onPopupUp} onMouseLeave={onPopupUp}
+              onTouchStart={onPopupDown} onTouchMove={onPopupMove} onTouchEnd={onPopupUp}/>
+            <div style={{padding:'12px 16px',display:'flex',gap:10,justifyContent:'flex-end'}}>
+              <button className="btn btn-ghost btn-sm" onClick={()=>{const c=popupCanvasRef.current;if(c){const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);}}}>🗑 クリア</button>
+              <button className="btn btn-ghost" onClick={()=>setPopupFid(null)}>キャンセル</button>
+              <button className="btn btn-primary" onClick={confirmPopup}>✓ この内容で決定</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
