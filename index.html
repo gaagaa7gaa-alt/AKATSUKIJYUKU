@@ -7,6 +7,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  if(typeof pdfjsLib !== 'undefined'){
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -606,6 +613,7 @@ function camelTask(r) {
     explanationText:r.explanation_text||'',
     explanationImageUrl:r.explanation_image_url||null,
     modelAnswers:r.model_answers||{},
+    pages:r.pages||null,  // PDF複数ページ: string[] | null
   };
 }
 function snakeTask(t) {
@@ -621,6 +629,7 @@ function snakeTask(t) {
   if (t.explanationText!==undefined)   o.explanation_text=t.explanationText;
   if (t.explanationImageUrl!==undefined) o.explanation_image_url=t.explanationImageUrl;
   if (t.modelAnswers!==undefined)      o.model_answers=t.modelAnswers;
+  if (t.pages!==undefined)             o.pages=t.pages;
   return o;
 }
 function camelSub(r) { return { id:r.id, taskId:r.task_id, nickname:r.nickname, answers:r.answers||{}, submittedAt:r.submitted_at }; }
@@ -1853,6 +1862,9 @@ function TaskCreator({ teacher, onDone, toast }) {
   const [expText,setExpText]=useState('');
   const [expImg,setExpImg]=useState(null);
   const [modelAnswers,setModelAnswers]=useState({}); // {fieldId: string}
+  const [pages,setPages]=useState([]);       // base64画像の配列（PDFの全ページ）
+  const [curPage,setCurPage]=useState(0);    // 現在表示ページインデックス
+  const [pdfLoading,setPdfLoading]=useState(false);
   /* ドラッグ移動用 */
   const [dragState,setDragState]=useState(null); // {fid, ox, oy}
   /* スマホ向け：数値入力モード */
@@ -1907,7 +1919,7 @@ function TaskCreator({ teacher, onDone, toast }) {
     const w=Math.abs(drawing.x1-drawing.x0),h=Math.abs(drawing.y1-drawing.y0);
     setDrawing(null);
     if(w<1||h<1)return;
-    const nf={id:genId(),type:mode,x,y,width:w,height:h,label:`問${fields.length+1}`};
+    const nf={id:genId(),type:mode,x,y,width:w,height:h,label:`問${fields.length+1}`,page:curPage};
     setPendingField(nf); setLabelInput(nf.label); setShowLabelModal(true);
   };
   /* 解答欄ラベルクリック → 選択。解答欄内でmousedown → ドラッグ移動開始 */
@@ -1930,10 +1942,11 @@ function TaskCreator({ teacher, onDone, toast }) {
   /* 数値モードで回答欄を追加 */
   const addFieldNumeric=()=>{
     const nf={id:genId(),type:mode,
-      x:5, y:5+fields.length*12,
+      x:5, y:5+fields.filter(f=>f.page===curPage).length*12,
       width:mode==='draw'?40:25,
       height:mode==='draw'?15:7,
-      label:`問${fields.length+1}`};
+      label:`問${fields.length+1}`,
+      page:curPage};
     setFields(fs=>[...fs,nf]); setSelField(nf.id);
   };
   /* 選択中フィールドの数値を直接変更 */
@@ -1941,20 +1954,62 @@ function TaskCreator({ teacher, onDone, toast }) {
     const num=Math.max(0,Math.min(key==='x'||key==='width'?100:100,Number(val)));
     setFields(fs=>fs.map(f=>f.id===id?{...f,[key]:num}:f));
   };
-  const handleFile=(file)=>{
+  const handleFile=async(file)=>{
     if(!file)return;
-    if(!file.type.startsWith('image/')&&file.type!=='application/pdf'){toast.show('画像またはPDFを選択してください','error');return;}
-    const reader=new FileReader();
-    reader.onload=(ev)=>{setImgUrl(ev.target.result);setStep(3);};
-    reader.readAsDataURL(file);
+    if(!file.type.startsWith('image/')&&file.type!=='application/pdf'){
+      toast.show('画像またはPDFを選択してください','error'); return;
+    }
+    if(file.type==='application/pdf'){
+      setPdfLoading(true);
+      try{
+        const arrayBuf = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({data:arrayBuf}).promise;
+        const rendered=[];
+        for(let i=1;i<=pdf.numPages;i++){
+          const page = await pdf.getPage(i);
+          const viewport = page.getViewport({scale:2.0});
+          const canvas = document.createElement('canvas');
+          canvas.width=viewport.width; canvas.height=viewport.height;
+          await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+          rendered.push(canvas.toDataURL('image/png'));
+        }
+        setPages(rendered);
+        setImgUrl(rendered[0]);
+        setCurPage(0);
+        setStep(3);
+      }catch(e){
+        toast.show('PDF読み込みエラー: '+e.message,'error');
+      }finally{
+        setPdfLoading(false);
+      }
+    } else {
+      const reader=new FileReader();
+      reader.onload=(ev)=>{
+        const url=ev.target.result;
+        setPages([url]);
+        setImgUrl(url);
+        setCurPage(0);
+        setStep(3);
+      };
+      reader.readAsDataURL(file);
+    }
   };
   const handleExpImg=(file)=>{if(!file)return;const reader=new FileReader();reader.onload=(ev)=>setExpImg(ev.target.result);reader.readAsDataURL(file);};
+
+  const switchPage=(idx)=>{
+    // 現在ページのフィールドは保持したまま表示ページだけ切替
+    setCurPage(idx);
+    setImgUrl(pages[idx]);
+    setSelField(null);
+    setDrawing(null);
+  };
 
   const save=async()=>{
     if(!title.trim()){toast.show('課題タイトルを入力してください','error');return;}
     setSaving(true);
     try {
-      await DB.createTask({id:genId(),title:title.trim(),description:desc.trim(),imageDataUrl:imgUrl,accessCode:genCode(),createdBy:teacher.teacherId,isPublished:false,answerFields:fields,explanationText:expText.trim(),explanationImageUrl:expImg,modelAnswers});
+      const savedPages = pages.length>1 ? pages : (imgUrl?[imgUrl]:null);
+      await DB.createTask({id:genId(),title:title.trim(),description:desc.trim(),imageDataUrl:imgUrl,accessCode:genCode(),createdBy:teacher.teacherId,isPublished:false,answerFields:fields,explanationText:expText.trim(),explanationImageUrl:expImg,modelAnswers,pages:savedPages});
       toast.show('課題を保存しました','success');
       onDone();
     } catch(e){toast.show('保存エラー: '+e.message,'error');}
@@ -1992,9 +2047,12 @@ function TaskCreator({ teacher, onDone, toast }) {
       {step===2&&(
         <div className="form-box" style={{maxWidth:560}}>
           <div className="form-title">② プリントをアップロード</div>
-          <div className="upload-zone" onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();handleFile(e.dataTransfer.files?.[0]);}} onClick={()=>fileRef.current.click()}>
-            <div className="big">📄</div>
-            <p>クリックまたはドラッグ＆ドロップで<br/>画像（PNG/JPG）またはPDFをアップロード</p>
+          <div className="upload-zone" onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();handleFile(e.dataTransfer.files?.[0]);}} onClick={()=>!pdfLoading&&fileRef.current.click()}>
+            {pdfLoading?(
+              <><span className="spinner dark" style={{width:32,height:32,borderWidth:4}}/><p style={{marginTop:12}}>PDFを変換中…</p></>
+            ):(
+              <><div className="big">📄</div><p>クリックまたはドラッグ＆ドロップで<br/>画像（PNG/JPG）またはPDFをアップロード</p></>
+            )}
             <input ref={fileRef} type="file" accept="image/*,application/pdf" style={{display:'none'}} onChange={e=>handleFile(e.target.files?.[0])}/>
           </div>
           <div className="divider"/>
@@ -2019,6 +2077,22 @@ function TaskCreator({ teacher, onDone, toast }) {
                 <button className={`btn btn-sm ${placeMode==='numeric'?'btn-gold':'btn-ghost'}`} onClick={()=>setPlaceMode('numeric')}>📱 数値入力</button>
                 <div style={{flex:1}}/><span style={{fontSize:11,color:'var(--stone)'}}>{imgUrl?(placeMode==='drag'?'ドラッグして配置':'右パネルで数値指定'):'プリントなし'}</span>
               </div>
+              {/* ページタブ（複数ページの場合のみ） */}
+              {pages.length>1&&(
+                <div style={{display:'flex',gap:4,padding:'6px 8px',background:'var(--paper-dk)',flexWrap:'wrap'}}>
+                  {pages.map((_,i)=>(
+                    <button key={i}
+                      className={`btn btn-sm ${curPage===i?'btn-primary':'btn-ghost'}`}
+                      style={{minWidth:48}}
+                      onClick={()=>switchPage(i)}>
+                      {i+1}ページ
+                    </button>
+                  ))}
+                  <span style={{fontSize:11,color:'var(--stone)',alignSelf:'center',marginLeft:4}}>
+                    ※ページごとに回答欄を配置してください
+                  </span>
+                </div>
+              )}
               <div className="canvas-area" ref={canvasRef}
                 style={{touchAction: placeMode==='drag'?'none':'auto'}}
                 onMouseDown={placeMode==='drag'?onCanvasDown:undefined}
@@ -2029,7 +2103,7 @@ function TaskCreator({ teacher, onDone, toast }) {
                 onTouchEnd={placeMode==='drag'?onCanvasUp:undefined}>
                 {imgUrl?(<>
                   <img src={imgUrl} alt="プリント" draggable={false}/>
-                  {fields.map(f=>(
+                  {fields.filter(f=>(f.page??0)===curPage).map(f=>(
                     <div key={f.id}
                       className={`field-overlay ${selField===f.id?'selected':''} ${f.type==='draw'?'field-draw':''}`}
                       style={{left:f.x+'%',top:f.y+'%',width:f.width+'%',height:f.height+'%',cursor:'grab'}}
@@ -2062,6 +2136,7 @@ function TaskCreator({ teacher, onDone, toast }) {
                           <span className={`type-pill ${f.type==='number'?'type-number':f.type==='draw'?'type-draw':'type-text'}`}>
                             {f.type==='draw'?'線画':f.type==='number'?'数値':'テキスト'}
                           </span>
+                          {pages.length>1&&<span style={{marginLeft:4,fontSize:10,background:'var(--paper-dk)',padding:'1px 5px',borderRadius:3,color:'var(--stone)'}}>{(f.page??0)+1}P</span>}
                         </div>
                       </div>
                       <button className="btn btn-sm btn-ghost" style={{padding:'4px 8px',color:'var(--crimson)'}} onClick={e=>{e.stopPropagation();deleteField(f.id);}}>✕</button>
@@ -2959,7 +3034,11 @@ function AnswerSheet({ task, nickname, onSubmit }) {
   const [answers,setAnswers]   = useState({});
   const [submitted,setSubmitted] = useState(false);
   const [loading,setLoading]   = useState(false);
+  const [curPage,setCurPage]   = useState(0);
   const fields = task.answerFields||[];
+  /* ページ画像: task.pages があればそれを使う、なければ imageDataUrl を1ページとして扱う */
+  const pageImages = task.pages && task.pages.length>0 ? task.pages : (task.imageDataUrl?[task.imageDataUrl]:[]);
+  const totalPages = pageImages.length;
   /* draw型は別途canvasで管理 */
   const drawCanvases = useRef({});
   const drawTools    = useRef({}); // {fid: {drawing,last}}
@@ -3093,10 +3172,23 @@ function AnswerSheet({ task, nickname, onSubmit }) {
         <div style={{marginTop:6,fontSize:13,opacity:.7}}>生徒：{nickname}</div>
       </div>
       <div className="sheet-canvas-wrapper">
-        {task.imageDataUrl?(
+        {/* ページタブ */}
+        {totalPages>1&&(
+          <div style={{display:'flex',gap:4,padding:'8px 10px',background:'var(--paper-dk)',flexWrap:'wrap'}}>
+            {pageImages.map((_,i)=>(
+              <button key={i}
+                className={`btn btn-sm ${curPage===i?'btn-primary':'btn-ghost'}`}
+                style={{minWidth:52}}
+                onClick={()=>setCurPage(i)}>
+                {i+1}ページ
+              </button>
+            ))}
+          </div>
+        )}
+        {pageImages.length>0?(
           <div className="sheet-canvas">
-            <img src={task.imageDataUrl} alt="問題プリント" draggable={false}/>
-            {fields.map(f=>{
+            <img src={pageImages[curPage]} alt="問題プリント" draggable={false}/>
+            {fields.filter(f=>(f.page??0)===curPage).map(f=>{
               if(f.type==='draw') return (
                 <div key={f.id} style={{position:'absolute',left:f.x+'%',top:f.y+'%',width:f.width+'%',height:f.height+'%',border:'2px dashed var(--crimson)',borderRadius:4,overflow:'hidden',background:'transparent'}}>
                   <canvas
@@ -3104,7 +3196,6 @@ function AnswerSheet({ task, nickname, onSubmit }) {
                     style={{width:'100%',height:'100%',cursor:'crosshair',display:'block',background:'transparent',touchAction:'none'}}
                     onMouseDown={e=>onDrawDown(e,f.id)} onMouseMove={e=>onDrawMove(e,f.id)} onMouseUp={e=>onDrawUp(e,f.id)} onMouseLeave={e=>onDrawUp(e,f.id)}
                     onTouchStart={e=>onDrawDown(e,f.id)} onTouchMove={e=>onDrawMove(e,f.id)} onTouchEnd={e=>onDrawUp(e,f.id)}/>
-                  {/* スマホ向け：別ウィンドウで書くボタン */}
                   <button
                     style={{position:'absolute',bottom:4,right:4,padding:'3px 8px',fontSize:10,background:'rgba(155,27,48,.85)',color:'white',border:'none',borderRadius:4,cursor:'pointer',fontFamily:'Noto Sans JP,sans-serif'}}
                     onClick={()=>openDrawPopup(f.id)}>✏️ 拡大</button>
