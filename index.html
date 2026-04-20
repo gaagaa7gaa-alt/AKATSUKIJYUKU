@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>紅月計算塾</title>
+<title>ミチ塾</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
@@ -27,6 +27,20 @@
   --stone:#8A7F74;--stone-lt:#C4BAB0;--white:#FFFFFF;
   --shadow:rgba(26,20,16,.18);--r:8px;
 }
+/* 科目テーマ：UI要素にcolor transitionを適用（canvas/img/inputは除外） */
+button, a, div, span, p, label, h1, h2, h3, h4, nav, header, footer, section, article {
+  transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
+}
+/* 英語テーマ */
+body.theme-english {
+  --crimson:#0E7BB0;--crimson-dk:#075E8A;--crimson-lt:#2FA0D8;
+}
+/* subject-banner */
+.subject-banner{display:flex;align-items:center;justify-content:center;gap:8px;padding:6px 16px;background:var(--paper-dk);border-bottom:2px solid var(--paper-dk);}
+.subject-btn{padding:7px 22px;border-radius:20px;font-size:13px;font-weight:700;border:2px solid var(--stone-lt);background:transparent;color:var(--stone);cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:all .3s;}
+.subject-btn.math.active{background:#9B1B30;border-color:#9B1B30;color:white;}
+.subject-btn.english.active{background:#0E7BB0;border-color:#0E7BB0;color:white;}
+.subject-btn:not(.active):hover{border-color:var(--stone);color:var(--ink);}
 html,body,#root{height:100%;width:100%;font-family:'Noto Sans JP',sans-serif;background:var(--paper);color:var(--ink);}
 ::-webkit-scrollbar{width:6px;}::-webkit-scrollbar-track{background:var(--paper-dk);}::-webkit-scrollbar-thumb{background:var(--stone-lt);border-radius:3px;}
 .mono{font-family:'DM Mono',monospace;}.serif{font-family:'Noto Serif JP',serif;}
@@ -668,7 +682,7 @@ function Kamon({ size=80, color='#9B1B30' }) {
 function Header({ role, onRoleChange, onHome }) {
   return (
     <header className="header">
-      <div className="header-logo" onClick={onHome}><div className="moon"/><span>紅月計算塾</span></div>
+      <div className="header-logo" onClick={onHome}><div className="moon"/><span>ミチ塾</span></div>
       <nav className="header-nav">
         <button className={`nav-btn ${role==='teacher'?'active':''}`} onClick={()=>onRoleChange('teacher')}>教える側</button>
         <button className={`nav-btn ${role==='student'?'active':''}`} onClick={()=>onRoleChange('student')}>生徒</button>
@@ -2653,7 +2667,7 @@ function StudentDashboard({ student, toast, onLogout }) {
       <div className="student-welcome">
         <div>
           <div style={{fontFamily:'Noto Serif JP',fontSize:18,fontWeight:700}}>こんにちは、{student.studentId} さん</div>
-          <div style={{fontSize:12,opacity:.8,marginTop:4}}>紅月計算塾へようこそ</div>
+          <div style={{fontSize:12,opacity:.8,marginTop:4}}>ミチ塾へようこそ</div>
         </div>
         <button className="btn btn-ghost btn-sm" style={{color:'white',borderColor:'rgba(255,255,255,.4)'}} onClick={onLogout}>ログアウト</button>
       </div>
@@ -3359,16 +3373,39 @@ function App() {
   const [view,setView]             = useState('dashboard');
   const [reviewTask,setReviewTask] = useState(null);
   const [editTask,setEditTask]     = useState(null);
+  const [subject,setSubject]       = useState(savedSession?.subject||'math'); // 'math' | 'english'
+
+  /* テーマ切替：body に class を付け外し */
+  useEffect(()=>{
+    document.body.classList.toggle('theme-english', subject==='english');
+  },[subject]);
 
   useEffect(()=>{
-    if(role==='teacher'&&teacher){ localStorage.setItem('kogetsu_session',JSON.stringify({role,teacher})); }
-    else if(role==='student'&&student){ localStorage.setItem('kogetsu_session',JSON.stringify({role,student})); }
+    if(role==='teacher'&&teacher){ localStorage.setItem('kogetsu_session',JSON.stringify({role,teacher,subject})); }
+    else if(role==='student'&&student){ localStorage.setItem('kogetsu_session',JSON.stringify({role,student,subject})); }
     else{ localStorage.removeItem('kogetsu_session'); }
-  },[role,teacher,student]);
+  },[role,teacher,student,subject]);
 
   const goHome=()=>{ setRole(null); setStudent(null); setTeacher(null); };
   const handleTeacherLogout=()=>{ localStorage.removeItem('kogetsu_session'); setTeacher(null); setRole(null); setView('dashboard'); };
   const handleStudentLogout=()=>{ localStorage.removeItem('kogetsu_session'); setStudent(null); setRole(null); };
+
+  /* 科目バナー（ログイン後のみ） */
+  const SubjectBanner = () => (
+    <div className="subject-banner">
+      <span style={{fontSize:13,fontWeight:700,color:'var(--stone)',marginRight:4}}>科目：</span>
+      <button
+        className={`subject-btn math ${subject==='math'?'active':''}`}
+        onClick={()=>setSubject('math')}>
+        📐 数学・算数
+      </button>
+      <button
+        className={`subject-btn english ${subject==='english'?'active':''}`}
+        onClick={()=>setSubject('english')}>
+        🔤 英語
+      </button>
+    </div>
+  );
 
   const renderTeacher=()=>{
     if(!teacher) return <TeacherAuth onLogin={u=>{setTeacher(u);setView('dashboard');}} toast={toast}/>;
@@ -3392,7 +3429,7 @@ function App() {
       <Header role={null} onRoleChange={setRole} onHome={goHome}/>
       <div className="landing">
         <Kamon size={88}/>
-        <div className="landing-title">紅月計算塾</div>
+        <div className="landing-title">ミチ塾</div>
         <div className="landing-subtitle">学習支援ボランティアのための<br/>デジタル課題プラットフォーム</div>
         <div className="landing-cards">
           <div className="landing-card" onClick={()=>setRole('teacher')}><div className="card-icon teacher">📚</div><div className="card-label">教える側</div><div className="card-desc">問題プリントをアップロードし、課題の作成・採点・板書配信ができます。</div><div className="card-cta">ログインして始める →</div></div>
@@ -3406,6 +3443,7 @@ function App() {
   return(
     <div className="app">
       <Header role={role} onRoleChange={r=>{setRole(r);setStudent(null);setTeacher(null);setView('dashboard');}} onHome={goHome}/>
+      <SubjectBanner/>
       {role==='teacher'?renderTeacher():renderStudent()}
       <Toasts toasts={toast.toasts}/>
     </div>
